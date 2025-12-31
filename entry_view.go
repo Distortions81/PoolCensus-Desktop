@@ -135,11 +135,11 @@ func summarizeJobLatency(stats pingStats) jobSummary {
 	real := avg + jitterValue/2
 	return jobSummary{
 		Exists:   true,
-		Min:      formatPing(stats.Min),
-		Avg:      formatPing(avg),
-		Max:      formatPing(stats.Max),
-		Jitter:   formatPing(jitterValue),
-		Real:     formatPing(real),
+		Min:      formatJobDelay(stats.Min),
+		Avg:      formatJobDelay(avg),
+		Max:      formatJobDelay(stats.Max),
+		Jitter:   formatJobDelay(jitterValue),
+		Real:     formatJobDelay(real),
 		AvgValue: real,
 	}
 }
@@ -230,9 +230,24 @@ func formatPing(ping float64) string {
 
 func formatJobLatency(latency float64) string {
 	if latency <= 0 {
-		return "<timeout>"
+		return "n/a"
 	}
-	return formatPing(latency)
+	return formatJobDelay(latency)
+}
+
+func formatJobDelay(ms float64) string {
+	switch {
+	case ms <= 0:
+		return "n/a"
+	case ms >= timeoutJobWaitMs:
+		return "timeout"
+	case ms < 1:
+		return "<1 ms"
+	case ms < 1000:
+		return fmt.Sprintf("%.0f ms", math.Round(ms))
+	default:
+		return fmt.Sprintf("%.1f s", ms/1000.0)
+	}
 }
 
 func computePortDisplay(entryPort, plainPort, tlsPort int) string {

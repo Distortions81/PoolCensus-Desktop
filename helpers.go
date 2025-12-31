@@ -8,6 +8,7 @@ import (
 )
 
 const timeoutPingMs = 9999.0
+const timeoutJobWaitMs = 30000.0
 
 func dominantPoolWallet(entry *logEntry) (string, bool) {
 	if entry == nil || len(entry.Payouts) == 0 {

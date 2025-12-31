@@ -134,7 +134,11 @@ type pingStats struct {
 }
 
 func (p *pingStats) Add(ms float64) {
-	if ms <= 0 || ms >= timeoutPingMs {
+	p.AddBounded(ms, timeoutPingMs)
+}
+
+func (p *pingStats) AddBounded(ms, max float64) {
+	if ms <= 0 || (max > 0 && ms >= max) {
 		return
 	}
 	if p.Count == 0 {

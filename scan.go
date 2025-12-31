@@ -73,7 +73,7 @@ func scanTargets(targets []scanTarget, agent, username, wallet, worker string, p
 			if entry != nil {
 				agg.latest = entry
 				agg.pingStats.Add(entry.PingMs)
-				agg.jobStats.Add(entry.JobLatencyMs)
+				agg.jobStats.AddBounded(entry.JobLatencyMs, timeoutJobWaitMs)
 				if !entry.Connected {
 					agg.errorCount++
 					agg.errors = append(agg.errors, fmt.Errorf("%s:%d: %s", target.Host, target.Port, entry.Error))
@@ -126,11 +126,8 @@ func collectFromPool(target scanTarget, agent, username, wallet, worker string) 
 		if captured != nil {
 			return
 		}
-		if jobWaitStart.IsZero() {
-			jobWaitStart = time.Now()
-		}
 		if !jobWaitStart.IsZero() {
-			jobLatency = float64(time.Since(jobWaitStart).Microseconds()) / 1000.0
+			jobLatency = time.Since(jobWaitStart).Seconds() * 1000.0
 		}
 		info, err := stratum.DecodeCoinbaseParts(
 			params.CoinBase1,
@@ -161,13 +158,12 @@ func collectFromPool(target scanTarget, agent, username, wallet, worker string) 
 	if err := client.Subscribe(agent); err != nil {
 		return buildErrorEntry(target, agent, username, wallet, worker, err), err
 	}
-	pingMs = float64(time.Since(start).Microseconds()) / 1000.0
+	pingMs = time.Since(start).Seconds() * 1000.0
 
+	jobWaitStart = time.Now()
 	if err := client.Authorize(); err != nil {
 		return buildErrorEntry(target, agent, username, wallet, worker, err), err
 	}
-
-	jobWaitStart = time.Now()
 
 	select {
 	case <-done:
