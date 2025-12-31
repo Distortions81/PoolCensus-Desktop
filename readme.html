@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PoolCensus Desktop Instructions</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#05060b; color:#f4f4f7; padding:32px; }
+    h1 { font-size:2rem; margin-bottom:0.5rem; }
+    p { margin:0 0 1rem; max-width:60ch; }
+    code { background:#111421; padding:2px 6px; border-radius:4px; }
+    .note { background:#0d121f; padding:12px; border-radius:8px; border:1px solid #1e2739; margin-top:20px; }
+  </style>
+</head>
+<body>
+  <h1>PoolCensus Desktop App</h1>
+  <p>Run <code>go run ./desktop-app</code> (or build the binary to double-click it) to scan every endpoint listed inside <code>desktop-app/pools.json</code>. By default the Desktop App probes each server three times; adjust that with <code>-scans 5</code> to control how many full passes are performed before rendering <code>report.html</code>.</p>
+  <p>A live spinner-style progress bar shows how far the scan has progressed. If one or more servers fail, rerun with <code>-verbose</code> to surface raw connection errors in the terminal.</p>
+  <div class="note">
+    <strong>Custom pools:</strong> place your own <code>pools.json</code> next to the desktop-app executable (the same directory the binary lives in). The app will automatically detect that copy and use it instead of the embedded list, so you can manage which pools are scanned without rebuilding.
+  </div>
+</body>
+</html>

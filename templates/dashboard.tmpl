@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PoolCensus</title>
+  <style>
+    :root{
+      /* M45-Core palette */
+      --accent: #2cf1c2;
+      --accent-soft: rgba(44, 241, 194, 0.14);
+      --bg-gradient-start: #161b2e;
+      --bg-gradient-mid: #050712;
+      --bg-gradient-end: #020308;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa1c0;
+      --text-muted: #6b7086;
+      --card-bg-start: rgba(44, 241, 194, 0.10);
+      --card-bg-mid: #101321;
+      --card-bg-end: #0b0e18;
+      --card-border: #272c3f;
+      --header-bg: rgba(0, 0, 0, 0.96);
+      --header-border: #1b2030;
+      --input-bg: #101320;
+      --input-border: #2b3243;
+      --table-hover: rgba(23, 200, 160, 0.06);
+      --code-bg: #101320;
+      --code-border: #2b3243;
+
+      /* Local aliases (minimize template churn) */
+      --text: var(--text-primary);
+      --muted: var(--text-secondary);
+      --muted2: var(--text-muted);
+      --border: var(--card-border);
+      --card: var(--card-bg-end);
+      --card2: var(--card-bg-mid);
+      --good: var(--accent);
+      --warn:#FB923C;
+      --bad:#F87171;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --radius: 16px;
+      --page-top-padding: 96px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color:var(--text);
+      background: radial-gradient(circle at top, var(--bg-gradient-start) 0, var(--bg-gradient-mid) 55%, var(--bg-gradient-end) 100%);
+      font: 16px/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      padding: var(--page-top-padding) 0 0;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    a{ color: var(--accent); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    header{
+      position:fixed; inset:0 0 auto 0;
+      z-index:10;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--header-border);
+      backdrop-filter: blur(12px);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    .header-inner{
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      flex:1;
+      min-width:0;
+    }
+    .brand-title{
+      font-weight: 800;
+      letter-spacing:.06em;
+      text-transform: uppercase;
+      font-size: 14px;
+      color: var(--muted2);
+    }
+    .brand-big{
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing:.01em;
+    }
+    .brand-sub{ color:var(--muted2); font-size: 16px; }
+    .brand-top{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+    .brand-logo{
+      height: auto;
+      width: auto;
+    }
+    .note{ color:var(--muted2); font-size: 12px; margin-top: 4px; }
+    .powered-by-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 0;
+      border-radius: 0;
+      border: none;
+      background: transparent;
+      text-decoration:none;
+    }
+    .powered-by-link img{
+      height: auto;
+      width: auto;
+      max-width: 100%;
+      display:block;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 15px;
+      cursor:pointer;
+      text-decoration:none;
+      white-space:nowrap;
+      transition: all 0.2s ease;
+    }
+    .btn:hover{
+      background: #1b2030;
+      border-color: #3b455d;
+      text-decoration:none;
+    }
+    .btn.ghost{
+      background: #10131d;
+      border-color: #2a3144;
+      font-weight: 700;
+    }
+    .btn.ghost:hover{ background: #171b28; border-color: #3b455d; }
+    .page{
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px 18px 28px;
+    }
+    .hint{
+      color: var(--muted);
+      margin: 0 0 14px;
+      font-size: 16px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 14px;
+    }
+    .card{
+      background: radial-gradient(circle at top left, var(--card-bg-start) 0, var(--card-bg-mid) 55%, var(--card-bg-end) 100%);
+      border: 1px solid var(--card-border);
+      border-top: 3px solid var(--accent);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      overflow:hidden;
+      transition: all 0.3s ease;
+    }
+    .card:hover{
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      box-shadow: 0 20px 35px rgba(18, 229, 175, 0.18);
+    }
+    .card.panel-good{ box-shadow: var(--shadow), 0 0 0 2px rgba(44,241,194,.12); }
+    .card.panel-bad{ box-shadow: var(--shadow), 0 0 0 2px rgba(251,146,60,.14); }
+    .card-top{
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      align-items:flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .eyebrow{
+      font-size: 13px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 2px;
+    }
+    .title{
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: .01em;
+      min-height: 48px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .time{
+      display:inline-block;
+      margin-top: 4px;
+      color: var(--muted);
+      text-decoration:none;
+    }
+    .time:hover{ text-decoration: underline; }
+    .actions{ display:flex; gap: 8px; flex-wrap:wrap; justify-content:flex-end; }
+    .card-actions{ display:flex; gap: 8px; flex-wrap:wrap; margin-top: 10px; justify-content:flex-start; padding-left: 6px; margin-bottom: 12px; }
+    .card-indicators{ display:flex; gap: 6px; align-items:center; padding-left: 6px; }
+    .badge{
+      background: rgba(246, 179, 74, 0.15);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 14px;
+      color: #f6b34a;
+      border: 1px solid rgba(246, 179, 74, 0.6);
+      white-space: nowrap;
+    }
+    .badge.warn{ background: rgba(246, 179, 74, 0.15); border-color: rgba(246, 179, 74, 0.6); color: #f6b34a; }
+    .badge.bad{ background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.6); color: #ffd5dd; }
+    .badge.tls{ background: rgba(44, 241, 194, 0.16); border-color: rgba(44, 241, 194, 0.6); color: var(--accent); }
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .kpi{
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px 10px 9px;
+      min-height: 88px;
+    }
+    .k{ color: var(--muted2); font-size: 13px; letter-spacing:.14em; text-transform:uppercase; margin-bottom: 6px; }
+    .v{ font-weight: 800; font-size: 17px; }
+    .s{ color: var(--muted); font-size: 14px; margin-top: 3px; }
+    .s.no-data{ opacity: 0; }
+    .tag-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .tag-row.no-data{
+      opacity: 0;
+      min-height: 32px;
+      pointer-events: none;
+    }
+    .tag{
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: var(--text);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .tag.warn{
+      border-color: rgba(246, 179, 74, 0.6);
+      color: #f6b34a;
+      background: rgba(246, 179, 74, 0.15);
+    }
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .kpi{
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px;
+      min-height: 150px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+    .issues-panel{
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      margin-top: 16px;
+      padding: 12px 14px 8px;
+      min-height: 140px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .issues-panel.has-issues{
+      border-color: rgba(248, 113, 113, 0.4);
+      background: rgba(248, 113, 113, 0.08);
+    }
+    .issues-panel.has-issues .content{
+      color: #ffd5dd;
+    }
+    .issues-panel.no-issues{
+      border-color: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .issues-panel summary{
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .issues-panel .content{
+      min-height: 80px;
+      display:flex;
+      align-items:center;
+    }
+    .issues-panel .no-issues{
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .code-pre{
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .reward-blue { color: #b9ffee; }
+    .reward-red { color: #ffd5dd; }
+    .section{
+      margin-top: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .section-head{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .section-title{ font-weight: 800; }
+    .section-sub{ color: var(--muted2); font-size: 14px; }
+    .change-list{ margin: 0; padding: 0; list-style: none; display:flex; flex-direction:column; gap: 6px; }
+    .change-list a{
+      display:flex;
+      gap: 10px;
+      align-items:baseline;
+      padding: 7px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      text-decoration:none;
+    }
+    .change-list a:hover{ filter: brightness(1.06); }
+    .field{ color: var(--accent); font-weight: 800; white-space: nowrap; }
+    .arrow{ color: var(--muted2); }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      padding: 0.08rem 0.25rem;
+      border-radius: 4px;
+      word-break: break-word;
+    }
+    details{
+      margin-top: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 8px 10px;
+    }
+    details.issues-panel.has-issues{
+      border-color: rgba(244, 67, 54, 0.95);
+      background: linear-gradient(135deg, rgba(244, 67, 54, 0.12), rgba(255, 255, 255, 0.04));
+      box-shadow:
+        0 0 0 2px rgba(244, 67, 54, 0.35),
+        0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+    details.issues-panel.has-issues summary{
+      color: #ffd5dd;
+    }
+    details.issues-panel.has-issues summary::before{
+      color: rgba(244, 67, 54, 0.95);
+    }
+    summary{
+      cursor:pointer;
+      color: var(--muted);
+      font-weight: 800;
+      list-style:none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    summary::before{
+      content: "▸";
+      color: var(--muted2);
+      display: inline-block;
+      width: 14px;
+      flex: 0 0 14px;
+      transform-origin: 50% 50%;
+      transition: transform 120ms ease;
+      transform: rotate(0deg);
+    }
+    details[open] > summary::before{ transform: rotate(90deg); }
+    table{ width:100%; border-collapse: collapse; font-size: 14px; }
+    th, td{ text-align:left; padding: 6px 8px; vertical-align: top; }
+    th{ color: var(--muted2); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    tr:not(:last-child){ border-bottom: 1px solid rgba(148,163,184,.12); }
+    .table-wrap{ overflow-x:auto; }
+    @media (max-width: 980px){
+      .kpis{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+      input{ min-width: 200px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-top">
+        <img class="brand-logo" src="/www/census-logo.png" alt="Census logo">
+        <div>
+          <div class="brand-big">PoolCensus</div>
+          <div class="brand-title">Solo Pool Scans</div>
+        </div>
+      </div>
+    </div>
+    <a class="powered-by-link" href="https://M45Core.com" target="_blank" rel="noreferrer noopener" aria-label="Visit M45Core.com">
+      <img src="/www/powered-by.png" alt="Powered by M45Core">
+    </a>
+  </div>
+</header>
+
+<div class="page">
+  {{define "hostCard"}}
+  <article class="card {{.Host.Latest.PanelClass}}">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">{{.PoolName}}</div>
+        <div class="title">
+          {{if .Host.Latest.PortDisplay}}{{.Host.Latest.Host}}{{.Host.Latest.PortDisplay}}{{else}}{{.Host.Latest.Host}}:{{.Host.Latest.Port}}{{end}}
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="{{.Host.Latest.ScanURL}}">Details</a>
+      <a class="btn ghost" href="{{.Host.Latest.HistoryURL}}">History</a>
+      <div class="card-indicators">
+        {{if .Host.Latest.TLS}}
+          <span class="badge tls">TLS</span>
+        {{end}}
+        {{if .Host.Latest.Issues}}
+          {{if ge .Host.Latest.IssueSeverity 90}}
+            <span class="badge bad">{{len .Host.Latest.Issues}} issue(s)</span>
+          {{else}}
+            <span class="badge warn">{{len .Host.Latest.Issues}} issue(s)</span>
+          {{end}}
+        {{end}}
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        {{if .Host.Latest.HasData}}
+        <div class="v mono">{{fmtPct .Host.Latest.WorkerPercent}}</div>
+        <div class="s mono">{{fmtN .Host.Latest.WorkerShare 8}} BTC</div>
+        {{else}}
+        <div class="v">n/a</div>
+        <div class="s">no coinbase yet</div>
+        {{end}}
+        <div class="k">Total payout</div>
+        <div class="v mono">{{fmtN .Host.Latest.TotalPayout 8}} BTC</div>
+        <div class="s {{.Host.Latest.RewardClass}}">{{.Host.Latest.RewardNote}}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        {{if .Host.Latest.PingSummaryPrimary.Exists}}
+        <div class="v mono">{{.Host.Latest.PingSummaryPrimary.Min}} / {{.Host.Latest.PingSummaryPrimary.Avg}} / {{.Host.Latest.PingSummaryPrimary.Max}}</div>
+        <div class="s mono">{{.Host.Latest.PingSummaryPrimary.Samples}} samples · jitter {{.Host.Latest.PingSummaryPrimary.Jitter}}</div>
+        {{else}}
+        <div class="v">n/a</div>
+        <div class="s">not enough ping data</div>
+        {{end}}
+        {{if .Host.Latest.PingSummaryTLS.Exists}}
+        <div class="k">TLS ping (min / avg / max)</div>
+        <div class="v mono">{{.Host.Latest.PingSummaryTLS.Min}} / {{.Host.Latest.PingSummaryTLS.Avg}} / {{.Host.Latest.PingSummaryTLS.Max}}</div>
+        <div class="s mono">{{.Host.Latest.PingSummaryTLS.Samples}} samples · jitter {{.Host.Latest.PingSummaryTLS.Jitter}}</div>
+        {{end}}
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        {{if .Host.Latest.JobWaitSummary.Exists}}
+        <div class="v mono">{{.Host.Latest.JobWaitSummary.Min}} / {{.Host.Latest.JobWaitSummary.Avg}} / {{.Host.Latest.JobWaitSummary.Max}}</div>
+        <div class="s mono">jitter {{.Host.Latest.JobWaitSummary.Jitter}} · real {{.Host.Latest.JobWaitSummary.Real}}</div>
+        {{else}}
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        {{end}}
+      </div>
+    </div>
+
+    {{if .Host.Latest.LatestChanges}}
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Coinbase changes</div>
+        <div class="section-sub">since previous scan</div>
+      </div>
+      <ul class="change-list">
+        {{range .Host.Latest.LatestChanges}}
+          <li><a href="{{.ScanURL}}" title="Open details"><span class="field">{{.Field}}</span><span class="arrow">→</span><code class="code-pre">{{.To}}</code></a></li>
+        {{end}}
+      </ul>
+    </div>
+    {{end}}
+
+    <details class="issues-panel {{if .Host.Latest.Issues}}has-issues{{else}}no-issues{{end}}" open>
+      <summary>Issues</summary>
+      <div class="content">
+        {{if .Host.Latest.Issues}}
+        <ul style="margin: 10px 0 0; padding-left: 18px;">
+          {{range .Host.Latest.Issues}}<li style="color:#ffd5dd; margin:0 0 8px;"><strong>{{.Message}}</strong><br><small style="color:var(--muted);">{{.Explanation}}</small></li>{{end}}
+        </ul>
+        {{else}}
+        <div class="no-issues">no issues</div>
+        {{end}}
+      </div>
+    </details>
+
+    {{if .Host.Latest.Changes}}
+    <details>
+      <summary>Coinbase changes {{if gt .Host.Latest.HiddenChanges 0}}(+{{.Host.Latest.HiddenChanges}} older){{end}}</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>At</th><th>Field</th><th>Old</th><th>New</th></tr></thead>
+          <tbody>
+            {{range .Host.Latest.Changes}}<tr><td class="mono"><a href="{{.ScanURL}}" style="color:var(--accent); text-decoration:none;">{{.AtShort}}</a></td><td>{{.Field}}</td><td><code class="code-pre">{{.From}}</code></td><td><code class="code-pre">{{.To}}</code></td></tr>{{end}}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {{end}}
+
+    {{if .Host.Latest.DisplayPayouts}}
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs ({{len .Host.Latest.DisplayPayouts}})</div>
+      </div>
+    </div>
+    {{end}}
+  </article>
+  {{end}}
+
+  {{if or (gt (len .CleanEntries) 0) (gt (len .IssueEntries) 0)}}
+  <p class="hint">Cards show the latest job scan per host; clean hosts are listed first, followed by hosts with issues. Click a timestamp to open the full scan.</p>
+  {{if .CleanEntries}}
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Clean hosts</div>
+    </div>
+    <div class="grid">
+      {{range .CleanEntries}}{{template "hostCard" .}}{{end}}
+    </div>
+  </section>
+  {{end}}
+  {{if .IssueEntries}}
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Hosts with issues</div>
+    </div>
+    <div class="grid">
+      {{range .IssueEntries}}{{template "hostCard" .}}{{end}}
+    </div>
+  </section>
+  {{end}}
+  {{else}}
+  <p class="hint">Cards show the latest job scan per host. If the coinbase changed since the previous scan, it appears inline. Use “History” for every scan.</p>
+  <div class="grid">
+    <article class="card">
+      <div class="card-top">
+        <div>
+          <div class="eyebrow">Waiting</div>
+          <div class="title">for data</div>
+        </div>
+      </div>
+      <div class="s">No host data yet.</div>
+    </article>
+  </div>
+  {{end}}
+</div>
+
+<script>
+(function () {
+  if (!window.EventSource) return;
+  var es = new EventSource("/events");
+  es.addEventListener("refresh", function () { window.location.reload(); });
+})();
+(function () {
+  var root = document.documentElement;
+  var header = document.querySelector("header");
+  if (!header || !root) return;
+  function updatePagePadding() {
+    var height = header.getBoundingClientRect().height;
+    root.style.setProperty("--page-top-padding", (Math.ceil(height + 16)) + "px");
+  }
+  updatePagePadding();
+  window.addEventListener("resize", updatePagePadding);
+  if (window.ResizeObserver) new ResizeObserver(updatePagePadding).observe(header);
+})();
+</script>
+</body>
+</html>

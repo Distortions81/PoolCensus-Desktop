@@ -1,0 +1,142 @@
+{
+  "pools": [
+    {
+      "pool_id": "m45core",
+      "name": "M45Core",
+      "website": "localhost",
+      "type": "solo",
+      "endpoints": [
+        { "host": "m45core.com", "port": 3333, "tls": false },
+        { "host": "m45core.com", "port": 4333, "tls": true }
+      ]
+    },
+    {
+      "pool_id": "atlaspool_solo",
+      "name": "AtlasPool Solo",
+      "website": "https://atlaspool.io",
+      "type": "solo",
+      "endpoints": [
+        { "host": "solo.atlaspool.io", "port": 3333, "tls": false },
+        { "host": "solo.atlaspool.io", "port": 4333, "tls": true }
+      ]
+    },
+    {
+      "pool_id": "ckpool_solo",
+      "name": "CKPool Solo",
+      "website": "https://ckpool.org",
+      "type": "solo",
+      "endpoints": [
+        { "host": "solo.ckpool.org", "port": 3333, "tls": false },
+        { "host": "solo.ckpool.org", "port": 4334, "tls": false },
+        { "host": "solo4.ckpool.org", "port": 3333, "tls": false },
+        { "host": "solo6.ckpool.org", "port": 3333, "tls": false },
+        { "host": "eusolo.ckpool.org", "port": 3333, "tls": false },
+        { "host": "ausolo.ckpool.org", "port": 3333, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "kano_solo_mode",
+      "name": "Kano (Solo Mode)",
+      "website": "https://kano.is",
+      "type": "solo",
+      "endpoints": [
+        { "host": "stratum.kano.is", "port": 3333, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "findmyblock_xyz",
+      "name": "FindMyBlock (EU)",
+      "website": "https://findmyblock.xyz",
+      "type": "solo",
+      "endpoints": [
+        { "host": "eu.findmyblock.xyz", "port": 3335, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "solohash_co_uk",
+      "name": "SoloHash",
+      "website": "https://solohash.co.uk",
+      "type": "solo",
+      "endpoints": [
+        { "host": "solo.solohash.co.uk", "port": 3333, "tls": false },
+        { "host": "solo-de.solohash.co.uk", "port": 3333, "tls": false },
+        { "host": "solo-ca.solohash.co.uk", "port": 3333, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "solomining_de",
+      "name": "SoloMining.de",
+      "website": "https://solomining.de",
+      "type": "solo",
+      "endpoints": [
+        { "host": "pool.solomining.de", "port": 3333, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "public_pool",
+      "name": "Public Pool",
+      "website": "https://public-pool.io",
+      "type": "solo",
+      "endpoints": [
+        { "host": "public-pool.io", "port": 3333, "tls": false },
+        { "host": "public-pool.io", "port": 4333, "tls": true }
+      ]
+    },
+    {
+      "pool_id": "solo_cat",
+      "name": "solo.cat",
+      "website": "https://solo.cat",
+      "type": "solo",
+      "endpoints": [
+        { "host": "solo.cat", "port": 3333, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "solopool_org_eu3",
+      "name": "SoloPool.org (EU3)",
+      "website": "https://solopool.org",
+      "type": "solo",
+      "endpoints": [
+        { "host": "eu3.solopool.org", "port": 8005, "tls": false },
+        { "host": "eu3.solopool.org", "port": 7005, "tls": false },
+        { "host": "eu3.solopool.org", "port": 9005, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "braiins_solo",
+      "name": "Braiins Solo",
+      "website": "https://braiins.com/pool",
+      "type": "solo",
+      "endpoints": [
+        { "host": "solo.stratum.braiins.com", "port": 3333, "tls": false },
+        { "host": "solo.stratum.braiins.com", "port": 443, "tls": true }
+      ]
+    },
+    {
+      "pool_id": "satoshiradio_solo",
+      "name": "Satoshis Radio",
+      "website": "https://satoshiradio.nl",
+      "type": "solo",
+      "endpoints": [
+        { "host": "pool.satoshiradio.nl", "port": 3333, "tls": false }
+      ]
+    },
+    {
+      "pool_id": "dmnd",
+      "name": "DMND (DEMAND)",
+      "website": "https://dmnd.work",
+      "type": "solo",
+      "endpoints": [
+        { "host": "mining.dmnd.work", "port": 1000, "tls": false },
+        { "host": "mining.dmnd.work", "port": 8442, "tls": true }
+      ]
+    },
+    {
+      "pool_id": "p2pool",
+      "name": "P2Pool (Decentralized)",
+      "website": "https://en.bitcoin.it/wiki/P2Pool",
+      "type": "decentralized",
+      "endpoints": []
+    }
+  ]
+}

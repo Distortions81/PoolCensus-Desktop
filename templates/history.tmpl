@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PoolCensus • History</title>
+  <style>
+    :root{
+      /* M45-Core palette */
+      --accent: #2cf1c2;
+      --bg-gradient-start: #161b2e;
+      --bg-gradient-mid: #050712;
+      --bg-gradient-end: #020308;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa1c0;
+      --text-muted: #6b7086;
+      --card-bg-start: rgba(44, 241, 194, 0.10);
+      --card-bg-mid: #101321;
+      --card-bg-end: #0b0e18;
+      --card-border: #272c3f;
+      --input-bg: #101320;
+      --input-border: #2b3243;
+
+      /* Local aliases */
+      --text: var(--text-primary);
+      --muted: var(--text-secondary);
+      --muted2: var(--text-muted);
+      --border: var(--card-border);
+      --good: var(--accent);
+      --warn:#FB923C;
+      --bad:#F87171;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --radius: 16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color:var(--text);
+      background: radial-gradient(circle at top, var(--bg-gradient-start) 0, var(--bg-gradient-mid) 55%, var(--bg-gradient-end) 100%);
+      font: 16px/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    a{ color: var(--accent); text-decoration: none; }
+    a:hover{ text-decoration: underline; }
+    .page{ max-width: 1200px; margin: 0 auto; padding: 18px; }
+    .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .title{ font-size: 24px; font-weight: 900; margin:0; }
+    .sub{ color: var(--muted); margin-top: 4px; }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card-bg-mid);
+      color: var(--text);
+      font-weight: 800;
+      text-decoration:none;
+      white-space:nowrap;
+      transition: all 0.2s ease;
+    }
+    .btn:hover{
+      background: #1b2030;
+      border-color: #3b455d;
+      text-decoration:none;
+    }
+    .btn:hover{ filter: brightness(1.07); text-decoration:none; }
+    .card{
+      background: radial-gradient(circle at top left, var(--card-bg-start) 0, var(--card-bg-mid) 55%, var(--card-bg-end) 100%);
+      border: 1px solid var(--card-border);
+      border-top: 3px solid var(--accent);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    table{ width:100%; border-collapse: collapse; font-size: 14px; }
+    th, td{ text-align:left; padding: 8px 10px; vertical-align: top; }
+    th{ color: var(--muted2); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    tr:not(:last-child){ border-bottom: 1px solid rgba(148,163,184,.12); }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .pill.good{ border-color: rgba(44,241,194,.55); color: #b9ffee; }
+    .pill.bad{ border-color: rgba(248,113,113,.65); color: #ffd5dd; }
+    .pill.warn{ border-color: rgba(251,146,60,.65); color: #ffd8b5; }
+    .pill.tls{ border-color: rgba(128,180,255,.65); color: #b5d7ff; }
+    .table-wrap{ overflow-x:auto; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <div>
+        <h1 class="title">Change history</h1>
+        <div class="sub">Pool <span class="mono">{{.PoolName}}</span> • Host <span class="mono">{{.Host}}</span> • All scans (including non-coinbase scans)</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a class="btn" href="{{.BackURL}}">Back to dashboard</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>At</th>
+              <th>Ping</th>
+              <th>Job wait</th>
+              <th>Connected</th>
+              <th>TLS</th>
+              <th>Payout</th>
+              <th>Outputs</th>
+              <th>Coinbase changed</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Rows}}
+            {{if .Connected}}
+            <tr>
+              <td class="mono"><a href="{{.ScanURL}}">{{.TimestampShort}}</a></td>
+              <td class="mono">{{.Ping}}</td>
+              <td class="mono">{{.JobLatency}}</td>
+              <td><span class="pill good">yes</span></td>
+              <td>{{if .TLS}}<span class="pill tls">yes</span>{{else}}<span class="pill">no</span>{{end}}</td>
+              <td class="mono">{{fmtN .TotalPayout 8}} BTC</td>
+              <td class="mono">{{.Outputs}}</td>
+              <td>{{if .CoinbaseChanged}}<span class="pill warn">changed</span>{{else}}<span class="pill">—</span>{{end}}</td>
+              <td><a href="{{.ScanURL}}">details</a></td>
+            </tr>
+            {{else}}
+            <tr>
+              <td class="mono" colspan="9">{{.TimestampShort}} • unable to connect</td>
+            </tr>
+            {{end}}
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

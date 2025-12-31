@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PoolCensus • Details</title>
+  <style>
+    :root{
+      /* M45-Core palette */
+      --accent: #2cf1c2;
+      --bg-gradient-start: #161b2e;
+      --bg-gradient-mid: #050712;
+      --bg-gradient-end: #020308;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa1c0;
+      --text-muted: #6b7086;
+      --card-bg-start: rgba(44, 241, 194, 0.10);
+      --card-bg-mid: #101321;
+      --card-bg-end: #0b0e18;
+      --card-border: #272c3f;
+      --input-bg: #101320;
+      --input-border: #2b3243;
+      --code-bg: #101320;
+      --code-border: #2b3243;
+
+      /* Local aliases */
+      --text: var(--text-primary);
+      --muted: var(--text-secondary);
+      --muted2: var(--text-muted);
+      --border: var(--card-border);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --radius: 16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color:var(--text);
+      background: radial-gradient(circle at top, var(--bg-gradient-start) 0, var(--bg-gradient-mid) 55%, var(--bg-gradient-end) 100%);
+      font: 16px/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .page{ max-width: 1200px; margin: 0 auto; padding: 18px; }
+    a{ color: var(--accent); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .title{ font-size: 24px; font-weight: 900; margin:0; }
+    .sub{ color: var(--muted); margin-top: 4px; }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card-bg-mid);
+      color: var(--text);
+      font-weight: 800;
+      text-decoration:none;
+      white-space:nowrap;
+      transition: all 0.2s ease;
+    }
+    .btn:hover{
+      background: #1b2030;
+      border-color: #3b455d;
+      text-decoration:none;
+    }
+    .btn:hover{ filter: brightness(1.07); text-decoration:none; }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .card{
+      background: radial-gradient(circle at top left, var(--card-bg-start) 0, var(--card-bg-mid) 55%, var(--card-bg-end) 100%);
+      border: 1px solid var(--card-border);
+      border-top: 3px solid var(--accent);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      overflow:hidden;
+      transition: all 0.3s ease;
+    }
+    .card:hover{
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      box-shadow: 0 20px 35px rgba(18, 229, 175, 0.18);
+    }
+    h2{
+      margin:0 0 10px;
+      font-size: 14px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--muted2);
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 8px 12px;
+      align-items: start;
+    }
+    .k{ color: var(--muted2); font-size: 14px; }
+    .v{ color: var(--text); }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      padding: 0.08rem 0.25rem;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+    details{
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px 10px;
+    }
+    summary{
+      cursor:pointer;
+      color: var(--muted);
+      font-weight: 900;
+      list-style:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    summary::before{
+      content:"▸";
+      color: var(--muted2);
+      display:inline-block;
+      width:14px;
+      flex: 0 0 14px;
+      transform-origin: 50% 50%;
+      transition: transform 120ms ease;
+      transform: rotate(0deg);
+    }
+    details[open] > summary::before{ transform: rotate(90deg); }
+    table{ width:100%; border-collapse: collapse; font-size: 14px; }
+    th, td{ text-align:left; padding: 6px 8px; vertical-align: top; }
+    th{ color: var(--muted2); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    tr:not(:last-child){ border-bottom: 1px solid rgba(148,163,184,.12); }
+    .table-wrap{ overflow-x:auto; margin-top: 8px; }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+      .kv{ grid-template-columns: 140px minmax(0,1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <div>
+        <h1 class="title">Details</h1>
+        <div class="sub">Pool <span class="mono">{{.PoolName}}</span> • Host <span class="mono">{{.Host}}</span></div>
+        <div class="sub">UTC <span class="mono">{{.Timestamp}}</span>{{if .TimestampLocal}} • Local <span class="mono">{{.TimestampLocal}}</span>{{end}}</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a class="btn" href="{{.BackURL}}">Back to dashboard</a>
+        <a class="btn" href="{{.HistoryURL}}">Change history</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Connection</h2>
+        <div class="kv">
+          <div class="k">Host</div><div class="v mono">{{if .Entry.PortDisplay}}{{.Raw.Host}}{{.Entry.PortDisplay}}{{else}}{{.Raw.Host}}:{{.Raw.Port}}{{end}}</div>
+          <div class="k">Connected</div><div class="v">{{if .Raw.Connected}}yes{{else}}no{{end}}</div>
+          <div class="k">TLS</div><div class="v">{{if .Raw.TLS}}yes{{else}}no{{end}}</div>
+          <div class="k">Ping</div><div class="v mono">{{fmtN .Raw.PingMs 2}} ms</div>
+          <div class="k">Time to first job</div><div class="v mono">{{.JobLatency}}</div>
+          <div class="k">Error</div><div class="v">{{if .Raw.Error}}<code>{{.Raw.Error}}</code>{{else}}—{{end}}</div>
+          <div class="k">User agent</div><div class="v">{{if .Raw.UserAgent}}<code>{{.Raw.UserAgent}}</code>{{else}}—{{end}}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Job / Coinbase</h2>
+        <div class="kv">
+          <div class="k">ExtraNonce2 size</div><div class="v mono">{{.Raw.ExtraNonce2Size}}</div>
+          <div class="k">Difficulty</div><div class="v mono">{{fmtN .Raw.Difficulty 8}}</div>
+          <div class="k">Block height</div><div class="v mono">{{.Raw.BlockHeight}}</div>
+          <div class="k">Pool tag</div><div class="v">{{if .Raw.PoolTag}}<code>{{.Raw.PoolTag}}</code>{{else}}—{{end}}</div>
+          <div class="k">Total payout</div><div class="v mono">{{fmtN .Raw.TotalPayout 8}} BTC</div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Coinbase raw</h2>
+        {{if .Raw.CoinbaseRaw}}
+          <details>
+            <summary>coinbase1</summary>
+            <div style="margin-top:10px;"><code>{{.Raw.CoinbaseRaw.CoinBase1}}</code></div>
+          </details>
+          <details style="margin-top:10px;">
+            <summary>coinbase2</summary>
+            <div style="margin-top:10px;"><code>{{.Raw.CoinbaseRaw.CoinBase2}}</code></div>
+          </details>
+          {{if .Raw.CoinbaseRaw.FullHex}}
+          <details style="margin-top:10px;">
+            <summary>full_hex</summary>
+            <div style="margin-top:10px;"><code>{{.Raw.CoinbaseRaw.FullHex}}</code></div>
+          </details>
+          {{end}}
+        {{else}}
+          <div style="color:var(--muted);">No coinbase captured for this job.</div>
+        {{end}}
+      </div>
+
+      {{if .Entry.DisplayPayouts}}
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Payout outputs</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Amount</th><th>Share</th><th>Address</th><th>Type</th></tr></thead>
+            <tbody>
+              {{range .Entry.DisplayPayouts}}
+              <tr>
+                <td class="mono">#{{.OutputIndex}}</td>
+                <td class="mono">{{fmtN .Amount 8}} BTC</td>
+                <td class="mono">{{fmtPct .Percent}}</td>
+                <td>{{if .IsWorker}}<code>&lt;worker wallet match&gt;</code>{{else}}{{if .Address}}<code>{{.Address}}</code>{{else}}<code>&lt;none&gt;</code>{{end}}{{end}}</td>
+                <td>{{if .Type}}{{.Type}}{{else}}unknown{{end}}</td>
+              </tr>
+              {{end}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</body>
+</html>
