@@ -42,6 +42,7 @@ func buildEntryView(entry *logEntry, baseReward float64, tlsPing, plainPing, job
 		TotalPayout:        entry.TotalPayout,
 		WorkerShare:        0,
 		Connected:          entry.Connected,
+		Error:              entry.Error,
 		SplitCount:         len(entry.Payouts),
 		HasData:            len(entry.Payouts) > 0 && entry.TotalPayout > 0,
 		Changes:            changes,

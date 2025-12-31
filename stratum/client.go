@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"strconv"
 	"sync"
@@ -224,9 +223,6 @@ func (c *Client) send(method string, params []any) (rpcResponse, error) {
 
 func (c *Client) readLoop() {
 	defer func() {
-		if c.OnDisconnect != nil {
-			c.OnDisconnect(io.EOF)
-		}
 		c.Close()
 	}()
 	close(c.readLoopReady)

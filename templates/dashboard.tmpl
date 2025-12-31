@@ -497,7 +497,12 @@
         <div class="s mono">jitter {{.Host.Latest.JobWaitSummary.Jitter}} · real {{.Host.Latest.JobWaitSummary.Real}}</div>
         {{else}}
         <div class="v">n/a</div>
+        {{if .Host.Latest.Connected}}
         <div class="s">timed out after 30 seconds</div>
+        {{else}}
+        <div class="s">No data available.</div>
+        {{if .Host.Latest.Error}}<div class="s" style="color:var(--muted);">Last error: <span class="mono">{{.Host.Latest.Error}}</span></div>{{end}}
+        {{end}}
         {{end}}
       </div>
     </div>
@@ -524,7 +529,12 @@
           {{range .Host.Latest.Issues}}<li style="color:#ffd5dd; margin:0 0 8px;"><strong>{{.Message}}</strong><br><small style="color:var(--muted);">{{.Explanation}}</small></li>{{end}}
         </ul>
         {{else}}
+        {{if and .Host.Latest.Connected .Host.Latest.HasData}}
         <div class="no-issues">no issues</div>
+        {{else}}
+        <div class="no-issues">No data available.</div>
+        {{if .Host.Latest.Error}}<div class="s" style="color:var(--muted); margin-top:8px;">Last error: <span class="mono">{{.Host.Latest.Error}}</span></div>{{end}}
+        {{end}}
         {{end}}
       </div>
     </details>

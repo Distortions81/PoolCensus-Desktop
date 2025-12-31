@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -106,12 +107,20 @@ func collectFromPool(target scanTarget, agent, username, wallet, worker string) 
 
 	var (
 		done         = make(chan struct{}, 1)
+		disconnect   = make(chan error, 1)
 		jobLatency   float64
 		pingMs       float64
 		currentDiff  float64
 		jobWaitStart time.Time
 		captured     *logEntry
 	)
+
+	client.OnDisconnect = func(err error) {
+		select {
+		case disconnect <- err:
+		default:
+		}
+	}
 
 	client.OnNotify = func(params *stratum.NotifyParams) {
 		if captured != nil {
@@ -163,18 +172,27 @@ func collectFromPool(target scanTarget, agent, username, wallet, worker string) 
 	select {
 	case <-done:
 		return captured, nil
+	case err := <-disconnect:
+		if err == nil {
+			err = errors.New("connection closed")
+		}
+		return buildErrorEntry(target, agent, username, wallet, worker, err), err
 	case <-time.After(30 * time.Second):
 		err := fmt.Errorf("timeout waiting for job")
-		return buildErrorEntry(target, agent, username, wallet, worker, err), err
+		return buildErrorEntryWithConnected(target, agent, username, wallet, worker, err, true), err
 	}
 }
 
 func buildErrorEntry(target scanTarget, agent, username, wallet, worker string, err error) *logEntry {
+	return buildErrorEntryWithConnected(target, agent, username, wallet, worker, err, false)
+}
+
+func buildErrorEntryWithConnected(target scanTarget, agent, username, wallet, worker string, err error, connected bool) *logEntry {
 	return &logEntry{
 		Timestamp:     time.Now().UTC().Format(time.RFC3339),
 		Host:          target.Host,
 		Port:          target.Port,
-		Connected:     false,
+		Connected:     connected,
 		Error:         err.Error(),
 		UserAgent:     agent,
 		Username:      username,
