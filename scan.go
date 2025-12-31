@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"poolcensus/stratum"
+	"poolcensus/desktop/stratum"
 )
 
 type scanTarget struct {

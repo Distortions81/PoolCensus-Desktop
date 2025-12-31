@@ -4,19 +4,98 @@
   <meta charset="utf-8">
   <title>PoolCensus Desktop Instructions</title>
   <style>
-    body { font-family: system-ui, sans-serif; background:#05060b; color:#f4f4f7; padding:32px; }
-    h1 { font-size:2rem; margin-bottom:0.5rem; }
-    p { margin:0 0 1rem; max-width:60ch; }
-    code { background:#111421; padding:2px 6px; border-radius:4px; }
-    .note { background:#0d121f; padding:12px; border-radius:8px; border:1px solid #1e2739; margin-top:20px; }
+    :root {
+      --bg0: #070815;
+      --bg1: #0b1020;
+      --card: rgba(255, 255, 255, 0.04);
+      --cardBorder: rgba(255, 255, 255, 0.10);
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.72);
+      --accent: #7dd3fc;
+      --accent2: #a78bfa;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background:
+        radial-gradient(1200px 800px at 10% 0%, rgba(167, 139, 250, 0.18), transparent 60%),
+        radial-gradient(900px 700px at 90% 10%, rgba(125, 211, 252, 0.14), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      padding: 40px 20px;
+      line-height: 1.55;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; }
+    header { margin-bottom: 18px; }
+    h1 { font-size: 2rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .subhead { margin: 0; color: var(--muted); max-width: 68ch; }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--cardBorder);
+      border-radius: 14px;
+      padding: 18px 18px 8px;
+      margin: 14px 0;
+      backdrop-filter: blur(6px);
+    }
+    h2 { font-size: 1.05rem; margin: 0 0 10px; color: rgba(255, 255, 255, 0.88); }
+    p { margin: 0 0 12px; max-width: 75ch; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.95em;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      padding: 2px 6px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    ul { margin: 0 0 12px 18px; padding: 0; color: var(--muted); }
+    li { margin: 0 0 6px; }
+    .kicker { color: var(--muted); font-size: 0.95rem; }
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.18);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.85rem;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
-  <h1>PoolCensus Desktop App</h1>
-  <p>Run <code>go run ./desktop-app</code> (or build the binary to double-click it) to scan every endpoint listed inside <code>desktop-app/pools.json</code>. By default the Desktop App probes each server three times; adjust that with <code>-scans 5</code> to control how many full passes are performed before rendering <code>report.html</code>.</p>
-  <p>A live spinner-style progress bar shows how far the scan has progressed. If one or more servers fail, rerun with <code>-verbose</code> to surface raw connection errors in the terminal.</p>
-  <div class="note">
-    <strong>Custom pools:</strong> place your own <code>pools.json</code> next to the desktop-app executable (the same directory the binary lives in). The app will automatically detect that copy and use it instead of the embedded list, so you can manage which pools are scanned without rebuilding.
+  <div class="container">
+    <header>
+      <h1>PoolCensus Desktop App <span class="pill">Instructions</span></h1>
+      <p class="subhead">Run a quick scan of public mining pool endpoints and view a local HTML report. Works on Windows, macOS, and Linux.</p>
+    </header>
+
+    <section>
+      <h2>Basic usage</h2>
+      <p>Double-click the PoolCensus Desktop App to start scanning.</p>
+      <p>While it runs, you’ll see a progress indicator.</p>
+      <p>When it finishes, it creates <code>report.html</code> in the same folder. Open that file to view the results.</p>
+      <p class="kicker">Tip: If it takes a while, just leave it open until the scan completes.</p>
+    </section>
+
+    <section>
+      <h2>Advanced (optional)</h2>
+      <p>If you want to run from source: install Go from <a href="https://go.dev/dl" target="_blank" rel="noopener noreferrer">https://go.dev/dl</a>, then run <code>go run .</code> from the repository root.</p>
+      <ul>
+        <li><code>-scans 5</code> — do more scan passes</li>
+        <li><code>-verbose</code> — show connection errors (otherwise you only see the progress bar)</li>
+        <li><code>pools.json</code> next to the app — override the built-in pool list</li>
+      </ul>
+    </section>
   </div>
 </body>
 </html>

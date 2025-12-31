@@ -1,0 +1,2414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PoolCensus</title>
+  <style>
+    :root{
+       
+      --accent: #2cf1c2;
+      --accent-soft: rgba(44, 241, 194, 0.14);
+      --bg-gradient-start: #161b2e;
+      --bg-gradient-mid: #050712;
+      --bg-gradient-end: #020308;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa1c0;
+      --text-muted: #6b7086;
+      --card-bg-start: rgba(44, 241, 194, 0.10);
+      --card-bg-mid: #101321;
+      --card-bg-end: #0b0e18;
+      --card-border: #272c3f;
+      --header-bg: rgba(0, 0, 0, 0.96);
+      --header-border: #1b2030;
+      --input-bg: #101320;
+      --input-border: #2b3243;
+      --table-hover: rgba(23, 200, 160, 0.06);
+      --code-bg: #101320;
+      --code-border: #2b3243;
+
+       
+      --text: var(--text-primary);
+      --muted: var(--text-secondary);
+      --muted2: var(--text-muted);
+      --border: var(--card-border);
+      --card: var(--card-bg-end);
+      --card2: var(--card-bg-mid);
+      --good: var(--accent);
+      --warn:#FB923C;
+      --bad:#F87171;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --radius: 16px;
+      --page-top-padding: 96px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color:var(--text);
+      background: radial-gradient(circle at top, var(--bg-gradient-start) 0, var(--bg-gradient-mid) 55%, var(--bg-gradient-end) 100%);
+      font: 16px/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      padding: var(--page-top-padding) 0 0;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    a{ color: var(--accent); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    header{
+      position:fixed; inset:0 0 auto 0;
+      z-index:10;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--header-border);
+      backdrop-filter: blur(12px);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    .header-inner{
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      flex:1;
+      min-width:0;
+    }
+    .brand-title{
+      font-weight: 800;
+      letter-spacing:.06em;
+      text-transform: uppercase;
+      font-size: 14px;
+      color: var(--muted2);
+    }
+    .brand-big{
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing:.01em;
+    }
+    .brand-sub{ color:var(--muted2); font-size: 16px; }
+    .brand-top{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+    .brand-logo{
+      height: auto;
+      width: auto;
+    }
+    .note{ color:var(--muted2); font-size: 12px; margin-top: 4px; }
+    .powered-by-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 0;
+      border-radius: 0;
+      border: none;
+      background: transparent;
+      text-decoration:none;
+    }
+    .powered-by-link img{
+      height: auto;
+      width: auto;
+      max-width: 100%;
+      display:block;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 15px;
+      cursor:pointer;
+      text-decoration:none;
+      white-space:nowrap;
+      transition: all 0.2s ease;
+    }
+    .btn:hover{
+      background: #1b2030;
+      border-color: #3b455d;
+      text-decoration:none;
+    }
+    .btn.ghost{
+      background: #10131d;
+      border-color: #2a3144;
+      font-weight: 700;
+    }
+    .btn.ghost:hover{ background: #171b28; border-color: #3b455d; }
+    .page{
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px 18px 28px;
+    }
+    .hint{
+      color: var(--muted);
+      margin: 0 0 14px;
+      font-size: 16px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 14px;
+    }
+    .card{
+      background: radial-gradient(circle at top left, var(--card-bg-start) 0, var(--card-bg-mid) 55%, var(--card-bg-end) 100%);
+      border: 1px solid var(--card-border);
+      border-top: 3px solid var(--accent);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      overflow:hidden;
+      transition: all 0.3s ease;
+    }
+    .card:hover{
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      box-shadow: 0 20px 35px rgba(18, 229, 175, 0.18);
+    }
+    .card.panel-good{ box-shadow: var(--shadow), 0 0 0 2px rgba(44,241,194,.12); }
+    .card.panel-bad{ box-shadow: var(--shadow), 0 0 0 2px rgba(251,146,60,.14); }
+    .card-top{
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      align-items:flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .eyebrow{
+      font-size: 13px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 2px;
+    }
+    .title{
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: .01em;
+      min-height: 48px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .time{
+      display:inline-block;
+      margin-top: 4px;
+      color: var(--muted);
+      text-decoration:none;
+    }
+    .time:hover{ text-decoration: underline; }
+    .actions{ display:flex; gap: 8px; flex-wrap:wrap; justify-content:flex-end; }
+    .card-actions{ display:flex; gap: 8px; flex-wrap:wrap; margin-top: 10px; justify-content:flex-start; padding-left: 6px; margin-bottom: 12px; }
+    .card-indicators{ display:flex; gap: 6px; align-items:center; padding-left: 6px; }
+    .badge{
+      background: rgba(246, 179, 74, 0.15);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 14px;
+      color: #f6b34a;
+      border: 1px solid rgba(246, 179, 74, 0.6);
+      white-space: nowrap;
+    }
+    .badge.warn{ background: rgba(246, 179, 74, 0.15); border-color: rgba(246, 179, 74, 0.6); color: #f6b34a; }
+    .badge.bad{ background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.6); color: #ffd5dd; }
+    .badge.tls{ background: rgba(44, 241, 194, 0.16); border-color: rgba(44, 241, 194, 0.6); color: var(--accent); }
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .kpi{
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px 10px 9px;
+      min-height: 88px;
+    }
+    .k{ color: var(--muted2); font-size: 13px; letter-spacing:.14em; text-transform:uppercase; margin-bottom: 6px; }
+    .v{ font-weight: 800; font-size: 17px; }
+    .s{ color: var(--muted); font-size: 14px; margin-top: 3px; }
+    .s.no-data{ opacity: 0; }
+    .tag-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .tag-row.no-data{
+      opacity: 0;
+      min-height: 32px;
+      pointer-events: none;
+    }
+    .tag{
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: var(--text);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .tag.warn{
+      border-color: rgba(246, 179, 74, 0.6);
+      color: #f6b34a;
+      background: rgba(246, 179, 74, 0.15);
+    }
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .kpi{
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px;
+      min-height: 150px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+    .issues-panel{
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      margin-top: 16px;
+      padding: 12px 14px 8px;
+      min-height: 140px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .issues-panel.has-issues{
+      border-color: rgba(248, 113, 113, 0.4);
+      background: rgba(248, 113, 113, 0.08);
+    }
+    .issues-panel.has-issues .content{
+      color: #ffd5dd;
+    }
+    .issues-panel.no-issues{
+      border-color: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .issues-panel summary{
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .issues-panel .content{
+      min-height: 80px;
+      display:flex;
+      align-items:center;
+    }
+    .issues-panel .no-issues{
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .code-pre{
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .reward-blue { color: #b9ffee; }
+    .reward-red { color: #ffd5dd; }
+    .section{
+      margin-top: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .section-head{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .section-title{ font-weight: 800; }
+    .section-sub{ color: var(--muted2); font-size: 14px; }
+    .change-list{ margin: 0; padding: 0; list-style: none; display:flex; flex-direction:column; gap: 6px; }
+    .change-list a{
+      display:flex;
+      gap: 10px;
+      align-items:baseline;
+      padding: 7px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      text-decoration:none;
+    }
+    .change-list a:hover{ filter: brightness(1.06); }
+    .field{ color: var(--accent); font-weight: 800; white-space: nowrap; }
+    .arrow{ color: var(--muted2); }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      padding: 0.08rem 0.25rem;
+      border-radius: 4px;
+      word-break: break-word;
+    }
+    details{
+      margin-top: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 8px 10px;
+    }
+    details.issues-panel.has-issues{
+      border-color: rgba(244, 67, 54, 0.95);
+      background: linear-gradient(135deg, rgba(244, 67, 54, 0.12), rgba(255, 255, 255, 0.04));
+      box-shadow:
+        0 0 0 2px rgba(244, 67, 54, 0.35),
+        0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+    details.issues-panel.has-issues summary{
+      color: #ffd5dd;
+    }
+    details.issues-panel.has-issues summary::before{
+      color: rgba(244, 67, 54, 0.95);
+    }
+    summary{
+      cursor:pointer;
+      color: var(--muted);
+      font-weight: 800;
+      list-style:none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    summary::before{
+      content: "▸";
+      color: var(--muted2);
+      display: inline-block;
+      width: 14px;
+      flex: 0 0 14px;
+      transform-origin: 50% 50%;
+      transition: transform 120ms ease;
+      transform: rotate(0deg);
+    }
+    details[open] > summary::before{ transform: rotate(90deg); }
+    table{ width:100%; border-collapse: collapse; font-size: 14px; }
+    th, td{ text-align:left; padding: 6px 8px; vertical-align: top; }
+    th{ color: var(--muted2); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    tr:not(:last-child){ border-bottom: 1px solid rgba(148,163,184,.12); }
+    .table-wrap{ overflow-x:auto; }
+    @media (max-width: 980px){
+      .kpis{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+      input{ min-width: 200px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-top">
+        <img class="brand-logo" src="/www/census-logo.png" alt="Census logo">
+        <div>
+          <div class="brand-big">PoolCensus</div>
+          <div class="brand-title">Solo Pool Scans</div>
+        </div>
+      </div>
+    </div>
+    <a class="powered-by-link" href="https://M45Core.com" target="_blank" rel="noreferrer noopener" aria-label="Visit M45Core.com">
+      <img src="/www/powered-by.png" alt="Powered by M45Core">
+    </a>
+  </div>
+</header>
+
+<div class="page">
+  
+
+  
+  <p class="hint">Cards show the latest job scan per host; clean hosts are listed first, followed by hosts with issues. Click a timestamp to open the full scan.</p>
+  
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Clean hosts</div>
+    </div>
+    <div class="grid">
+      
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">AtlasPool Solo</div>
+        <div class="title">
+          solo.atlaspool.io:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98.5%</div>
+        <div class="s mono">3.11559844 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.1630441 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">93 ms / 93 ms / 93 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">CKPool Solo</div>
+        <div class="title">
+          solo.ckpool.org:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98%</div>
+        <div class="s mono">3.10025914 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16352973 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">93 ms / 93 ms / 93 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">solo.cat</div>
+        <div class="title">
+          solo.cat:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">100%</div>
+        <div class="s mono">3.16337556 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16337556 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">102 ms / 102 ms / 102 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">CKPool Solo</div>
+        <div class="title">
+          solo.ckpool.org:4334
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98%</div>
+        <div class="s mono">3.10025914 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16352973 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">109 ms / 109 ms / 109 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">CKPool Solo</div>
+        <div class="title">
+          solo4.ckpool.org:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98%</div>
+        <div class="s mono">3.10025914 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16352973 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">109 ms / 109 ms / 109 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">Public Pool</div>
+        <div class="title">
+          public-pool.io:4333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+          <span class="badge tls">TLS</span>
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">100%</div>
+        <div class="s mono">3.16304174 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16304174 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">126 ms / 126 ms / 126 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v mono">82 ms / 82 ms / 82 ms</div>
+        <div class="s mono">jitter n/a · real 82 ms</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">M45Core</div>
+        <div class="title">
+          m45core.com:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98%</div>
+        <div class="s mono">3.09985349 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16311581 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">158 ms / 158 ms / 158 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v mono">25 ms / 25 ms / 25 ms</div>
+        <div class="s mono">jitter n/a · real 25 ms</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (3)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">AtlasPool Solo</div>
+        <div class="title">
+          solo.atlaspool.io:4333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+          <span class="badge tls">TLS</span>
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98.5%</div>
+        <div class="s mono">3.11559844 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.1630441 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">160 ms / 160 ms / 160 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">Public Pool</div>
+        <div class="title">
+          public-pool.io:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">100%</div>
+        <div class="s mono">3.16304174 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16304174 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">196 ms / 196 ms / 196 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v mono">81 ms / 81 ms / 81 ms</div>
+        <div class="s mono">jitter n/a · real 81 ms</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">M45Core</div>
+        <div class="title">
+          m45core.com:4333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+          <span class="badge tls">TLS</span>
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98%</div>
+        <div class="s mono">3.09985349 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16311581 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">198 ms / 198 ms / 198 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v mono">21 ms / 21 ms / 21 ms</div>
+        <div class="s mono">jitter n/a · real 21 ms</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (3)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">Satoshis Radio</div>
+        <div class="title">
+          pool.satoshiradio.nl:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">100%</div>
+        <div class="s mono">3.16358817 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16358817 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">299 ms / 299 ms / 299 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">SoloMining.de</div>
+        <div class="title">
+          pool.solomining.de:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">100%</div>
+        <div class="s mono">3.16305091 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16305091 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">302 ms / 302 ms / 302 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v mono">132 ms / 132 ms / 132 ms</div>
+        <div class="s mono">jitter n/a · real 132 ms</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">Braiins Solo</div>
+        <div class="title">
+          solo.stratum.braiins.com:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">99.5%</div>
+        <div class="s mono">3.14766869 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16348612 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">309 ms / 309 ms / 309 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">FindMyBlock (EU)</div>
+        <div class="title">
+          eu.findmyblock.xyz:3335
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">100%</div>
+        <div class="s mono">3.16350443 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16350443 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">317 ms / 317 ms / 317 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v mono">81 ms / 81 ms / 81 ms</div>
+        <div class="s mono">jitter n/a · real 81 ms</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">CKPool Solo</div>
+        <div class="title">
+          eusolo.ckpool.org:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98%</div>
+        <div class="s mono">3.10022328 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16349314 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">344 ms / 344 ms / 344 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">CKPool Solo</div>
+        <div class="title">
+          ausolo.ckpool.org:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">98%</div>
+        <div class="s mono">3.09995134 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16321565 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">510 ms / 510 ms / 510 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (2)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+    </div>
+  </section>
+  
+  
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Hosts with issues</div>
+    </div>
+    <div class="grid">
+      
+  <article class="card panel-bad">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">SoloHash</div>
+        <div class="title">
+          solo-ca.solohash.co.uk:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+          
+            <span class="badge warn">1 issue(s)</span>
+          
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">0%</div>
+        <div class="s mono">0 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16347315 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">178 ms / 178 ms / 178 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel has-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <ul style="margin: 10px 0 0; padding-left: 18px;">
+          <li style="color:#ffd5dd; margin:0 0 8px;"><strong>SINGLE PAYOUT MISSING WORKER WALLET</strong><br><small style="color:var(--muted);">Single payout to a pool wallet means the worker is not paid directly—only the pool promises to distribute earnings later.</small></li>
+        </ul>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-bad">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">SoloHash</div>
+        <div class="title">
+          solo.solohash.co.uk:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+          
+            <span class="badge warn">1 issue(s)</span>
+          
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">0%</div>
+        <div class="s mono">0 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16347315 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">282 ms / 282 ms / 282 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel has-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <ul style="margin: 10px 0 0; padding-left: 18px;">
+          <li style="color:#ffd5dd; margin:0 0 8px;"><strong>SINGLE PAYOUT MISSING WORKER WALLET</strong><br><small style="color:var(--muted);">Single payout to a pool wallet means the worker is not paid directly—only the pool promises to distribute earnings later.</small></li>
+        </ul>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-bad">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">SoloPool.org (EU3)</div>
+        <div class="title">
+          eu3.solopool.org:8005
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+          
+            <span class="badge warn">1 issue(s)</span>
+          
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">0%</div>
+        <div class="s mono">0 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16309785 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">310 ms / 310 ms / 310 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel has-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <ul style="margin: 10px 0 0; padding-left: 18px;">
+          <li style="color:#ffd5dd; margin:0 0 8px;"><strong>SINGLE PAYOUT MISSING WORKER WALLET</strong><br><small style="color:var(--muted);">Single payout to a pool wallet means the worker is not paid directly—only the pool promises to distribute earnings later.</small></li>
+        </ul>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-bad">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">SoloPool.org (EU3)</div>
+        <div class="title">
+          eu3.solopool.org:9005
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+          
+            <span class="badge warn">1 issue(s)</span>
+          
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">0%</div>
+        <div class="s mono">0 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16309785 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">329 ms / 329 ms / 329 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel has-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <ul style="margin: 10px 0 0; padding-left: 18px;">
+          <li style="color:#ffd5dd; margin:0 0 8px;"><strong>SINGLE PAYOUT MISSING WORKER WALLET</strong><br><small style="color:var(--muted);">Single payout to a pool wallet means the worker is not paid directly—only the pool promises to distribute earnings later.</small></li>
+        </ul>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-bad">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">SoloPool.org (EU3)</div>
+        <div class="title">
+          eu3.solopool.org:7005
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+          
+            <span class="badge warn">1 issue(s)</span>
+          
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">0%</div>
+        <div class="s mono">0 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16309785 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">339 ms / 339 ms / 339 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel has-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <ul style="margin: 10px 0 0; padding-left: 18px;">
+          <li style="color:#ffd5dd; margin:0 0 8px;"><strong>SINGLE PAYOUT MISSING WORKER WALLET</strong><br><small style="color:var(--muted);">Single payout to a pool wallet means the worker is not paid directly—only the pool promises to distribute earnings later.</small></li>
+        </ul>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-bad">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">SoloHash</div>
+        <div class="title">
+          solo-de.solohash.co.uk:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+          
+            <span class="badge warn">1 issue(s)</span>
+          
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v mono">0%</div>
+        <div class="s mono">0 BTC</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">3.16347315 BTC</div>
+        <div class="s reward-blue">Total payout amount correct</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v mono">352 ms / 352 ms / 352 ms</div>
+        <div class="s mono">1 samples · jitter n/a</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel has-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <ul style="margin: 10px 0 0; padding-left: 18px;">
+          <li style="color:#ffd5dd; margin:0 0 8px;"><strong>SINGLE PAYOUT MISSING WORKER WALLET</strong><br><small style="color:var(--muted);">Single payout to a pool wallet means the worker is not paid directly—only the pool promises to distribute earnings later.</small></li>
+        </ul>
+        
+      </div>
+    </details>
+
+    
+
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Payout outputs (1)</div>
+      </div>
+    </div>
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">mining.dmnd.work</div>
+        <div class="title">
+          mining.dmnd.work:1000
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">no coinbase yet</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">0 BTC</div>
+        <div class="s reward-red">Payout not recorded yet</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">not enough ping data</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">mining.dmnd.work</div>
+        <div class="title">
+          mining.dmnd.work:8442
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+          <span class="badge tls">TLS</span>
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">no coinbase yet</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">0 BTC</div>
+        <div class="s reward-red">Payout not recorded yet</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">not enough ping data</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">solo.stratum.braiins.com</div>
+        <div class="title">
+          solo.stratum.braiins.com:443
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+          <span class="badge tls">TLS</span>
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">no coinbase yet</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">0 BTC</div>
+        <div class="s reward-red">Payout not recorded yet</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">not enough ping data</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">stratum.kano.is</div>
+        <div class="title">
+          stratum.kano.is:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">no coinbase yet</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">0 BTC</div>
+        <div class="s reward-red">Payout not recorded yet</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">not enough ping data</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+  </article>
+  
+  <article class="card panel-good">
+    <div class="card-top">
+      <div>
+        <div class="eyebrow">solo6.ckpool.org</div>
+        <div class="title">
+          solo6.ckpool.org:3333
+        </div>
+      </div>
+    </div>
+
+    <div class="actions card-actions">
+      <a class="btn ghost" href="#">Details</a>
+      <a class="btn ghost" href="#">History</a>
+      <div class="card-indicators">
+        
+        
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Worker share</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">no coinbase yet</div>
+        
+        <div class="k">Total payout</div>
+        <div class="v mono">0 BTC</div>
+        <div class="s reward-red">Payout not recorded yet</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Ping (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">not enough ping data</div>
+        
+        
+      </div>
+
+      <div class="kpi">
+        <div class="k">Work delay (min / avg / max)</div>
+        
+        <div class="v">n/a</div>
+        <div class="s">timed out after 30 seconds</div>
+        
+      </div>
+    </div>
+
+    
+
+    <details class="issues-panel no-issues" open>
+      <summary>Issues</summary>
+      <div class="content">
+        
+        <div class="no-issues">no issues</div>
+        
+      </div>
+    </details>
+
+    
+
+    
+  </article>
+  
+    </div>
+  </section>
+  
+  
+</div>
+
+<script>
+(function () {
+  if (!window.EventSource) return;
+  var es = new EventSource("/events");
+  es.addEventListener("refresh", function () { window.location.reload(); });
+})();
+(function () {
+  var root = document.documentElement;
+  var header = document.querySelector("header");
+  if (!header || !root) return;
+  function updatePagePadding() {
+    var height = header.getBoundingClientRect().height;
+    root.style.setProperty("--page-top-padding", (Math.ceil(height + 16)) + "px");
+  }
+  updatePagePadding();
+  window.addEventListener("resize", updatePagePadding);
+  if (window.ResizeObserver) new ResizeObserver(updatePagePadding).observe(header);
+})();
+</script>
+</body>
+</html>
