@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -35,6 +36,7 @@ func NewPoolCensusApp() *PoolCensusApp {
 
 func (a *PoolCensusApp) startup(ctx context.Context) {
 	a.ctx = ctx
+	log.Printf("Wails startup complete")
 }
 
 func (a *PoolCensusApp) StartScan(passes int) (*dashboardView, error) {

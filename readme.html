@@ -115,6 +115,13 @@
     </section>
 
     <section>
+      <h2>Troubleshooting</h2>
+      <p>If the app opens and immediately closes (common on older macOS when testing unsigned builds), run the executable from a terminal to see output:</p>
+      <p><code>./PoolCensus.app/Contents/MacOS/PoolCensus</code></p>
+      <p class="kicker">PoolCensus also writes a log file to the OS cache directory. On macOS this is typically <code>~/Library/Caches/PoolCensus/poolcensus.log</code>; if sandboxed it will be under <code>~/Library/Containers/com.poolcensus.desktop/Data/Library/Caches/PoolCensus/poolcensus.log</code>.</p>
+    </section>
+
+    <section>
       <h2>Custom pools</h2>
       <p>Drop a <code>pools.json</code> next to the binary to override the embedded list. Each scan will automatically prefer that file if it exists.</p>
       <p>Want to see the raw data? Check <code>pools.json</code> or inspect the generated scan view while the app is open.</p>

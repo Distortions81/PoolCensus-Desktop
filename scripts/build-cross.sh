@@ -241,6 +241,14 @@ cat <<EOF >"$plist_path"
 </plist>
 EOF
 
+if have rcodesign; then
+  echo "Ad-hoc signing ${app_name}.app with rcodesign..."
+  rcodesign sign "$bundle_dir" || echo "rcodesign sign failed, continuing" >&2
+  rcodesign verify --verbose "$bundle_bin" || echo "rcodesign verify failed, continuing" >&2
+else
+  echo "rcodesign not found; skipping macOS signing. (Some Macs may quarantine/deny unsigned apps.)" >&2
+fi
+
 ensure_cmd zip zip
 
 (
