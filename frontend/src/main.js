@@ -89,17 +89,23 @@ function renderEntries(container, entries, emptyMessage) {
   }
   container.innerHTML = entries
     .map((entry) => {
-      const latest = entry?.Host?.Latest;
-      const hostLabel = latest?.Host ? `${latest.Host}:${latest.Port}` : entry?.Host?.Host ?? 'unknown';
-      const ping = latest?.Ping ?? 'n/a';
-      const badge = latest?.PanelClass === 'panel-bad' ? 'issue' : 'good';
+      const latest = entry && entry.Host && entry.Host.Latest ? entry.Host.Latest : null;
+      const hostLabel =
+        latest && latest.Host
+          ? `${latest.Host}:${latest.Port}`
+          : entry && entry.Host && entry.Host.Host
+            ? entry.Host.Host
+            : 'unknown';
+      const ping = latest && latest.Ping != null ? latest.Ping : 'n/a';
+      const badge = latest && latest.PanelClass === 'panel-bad' ? 'issue' : 'good';
+      const rewardNote = latest && latest.RewardNote ? latest.RewardNote : '';
       return `
         <li>
           <div class="entry-header">
             <span class="badge ${badge}">${entry.PoolName}</span>
             <span class="entry-ping">${ping}</span>
           </div>
-          <p class="entry-meta">${hostLabel} · ${latest?.RewardNote ?? ''}</p>
+          <p class="entry-meta">${hostLabel} · ${rewardNote}</p>
         </li>
       `;
     })
@@ -127,7 +133,11 @@ function renderView(view) {
 async function loadLastReport() {
   try {
     const lastView = await LastReport();
-    if (lastView?.CleanEntries?.length || lastView?.IssueEntries?.length) {
+    if (
+      lastView &&
+      ((lastView.CleanEntries && lastView.CleanEntries.length > 0) ||
+        (lastView.IssueEntries && lastView.IssueEntries.length > 0))
+    ) {
       renderView(lastView);
       scanStatus.textContent = 'Last scan loaded';
     }
@@ -151,7 +161,7 @@ scanButton.addEventListener('click', async () => {
     }
   } catch (err) {
     progressLabel.textContent = 'Scan failed';
-    scanStatus.textContent = `Error: ${err?.message || err}`;
+    scanStatus.textContent = `Error: ${(err && err.message) || err}`;
     console.error(err);
   } finally {
     scanButton.disabled = false;
