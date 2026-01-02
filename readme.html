@@ -71,6 +71,17 @@
     </section>
 
     <section>
+      <h2>Bootstrap scripts</h2>
+      <p>Each platform has a helper script that installs the OS dependencies, Go/Wails, and frontend bundle before running <code>wails build</code> for the first time.</p>
+      <ul>
+        <li><code>scripts/setup-ubuntu.sh</code> – Ubuntu/Debian; installs GTK/WebKit, Node, and Go packages before rebuilding the frontend.</li>
+        <li><code>scripts/setup-mac.sh</code> – macOS (requires Homebrew) to install Go/Node and regenerate the bundle.</li>
+        <li><code>scripts/setup-windows.bat</code> – Windows using Chocolatey; installs Go, Node, and pkg-config and then runs the frontend build.</li>
+      </ul>
+      <p class="kicker">Run the script for your platform before invoking <code>wails build</code> or <code>wails dev</code> to reduce manual dependency work.</p>
+    </section>
+
+    <section>
       <h2>Using the desktop app</h2>
       <p>Open PoolCensus, click <strong>Start scan</strong>, and watch the progress bar walk through every configured pool. When the scan completes the UI will show how many hosts looked healthy and which ones reported issues.</p>
       <p class="kicker">Scanning is entirely manual now; the frontend never starts a background scan without your input.</p>
