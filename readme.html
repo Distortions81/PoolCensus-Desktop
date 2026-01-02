@@ -94,8 +94,14 @@
         <li><code>scripts/build-linux.sh</code> – runs <code>npm run build</code> in <code>frontend/</code> and then <code>wails build</code> for Linux.</li>
         <li><code>scripts/build-mac.sh</code> – equivalent packaging steps for macOS.</li>
         <li><code>scripts/build-windows.bat</code> – runs the frontend build and <code>wails build</code> from a Windows shell.</li>
+        <li><code>scripts/build-cross.sh</code> – Linux helper that rebuilds the frontend and calls <code>wails build --platform=linux/amd64,windows/amd64</code> (Ubuntu 24.04: installs <code>mingw-w64</code> automatically; pass <code>--no-install-deps</code> to skip).</li>
       </ul>
       <p class="kicker">Use these scripts when you’re ready to create packaged binaries for each platform.</p>
+    </section>
+
+    <section>
+      <h2>macOS packaging</h2>
+      <p>macOS bundles still require a macOS machine because Wails needs Apple’s SDK/toolchain. Run <code>scripts/build-mac.sh</code> on a Mac to produce that artifact; the Ubuntu helpers cannot cross-compile to <code>darwin</code>.</p>
     </section>
 
     <section>
