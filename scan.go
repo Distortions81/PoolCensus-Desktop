@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sort"
-	"strings"
 	"time"
 
 	"poolcensus/desktop/stratum"
@@ -28,6 +27,12 @@ type scanAggregate struct {
 	errors     []error
 }
 
+type scanOptions struct {
+	Passes     int
+	Verbose    bool
+	OnProgress func(current, total int, target scanTarget)
+}
+
 func collectTargets(pools *PoolsData, filter string) []scanTarget {
 	var targets []scanTarget
 	for _, pool := range filterPools(pools, filter) {
@@ -46,21 +51,25 @@ func collectTargets(pools *PoolsData, filter string) []scanTarget {
 	return targets
 }
 
-func scanTargets(targets []scanTarget, agent, username, wallet, worker string, passes int) []*scanAggregate {
-	if len(targets) == 0 {
-		return nil
+func scanTargets(targets []scanTarget, agent, username, wallet, worker string, opts scanOptions) []*scanAggregate {
+	if len(targets) == 0 || opts.Passes <= 0 {
+		if len(targets) == 0 {
+			return nil
+		}
+		opts.Passes = defaultScanPasses
 	}
 
 	results := make(map[string]*scanAggregate)
-	total := len(targets) * passes
+	total := len(targets) * opts.Passes
 	progress := 0
-	printProgress(progress, total)
 
-	for pass := 0; pass < passes; pass++ {
+	for pass := 0; pass < opts.Passes; pass++ {
 		for _, target := range targets {
-			entry, err := collectFromPool(target, agent, username, wallet, worker)
+			entry, err := collectFromPool(target, agent, username, wallet, worker, opts.Verbose)
 			progress++
-			printProgress(progress, total)
+			if opts.OnProgress != nil {
+				opts.OnProgress(progress, total, target)
+			}
 
 			key := fmt.Sprintf("%s:%d", target.Host, target.Port)
 			agg, ok := results[key]
@@ -79,12 +88,9 @@ func scanTargets(targets []scanTarget, agent, username, wallet, worker string, p
 					agg.errors = append(agg.errors, fmt.Errorf("%s:%d: %s", target.Host, target.Port, entry.Error))
 				}
 			}
-			if err != nil && verbose {
-				log.Printf("pool %s:%d: %v", target.Host, target.Port, err)
-			}
+			logVerbose(opts.Verbose, "pool %s:%d: %v", target.Host, target.Port, err)
 		}
 	}
-	fmt.Println()
 
 	aggregates := make([]*scanAggregate, 0, len(results))
 	for _, agg := range results {
@@ -101,7 +107,7 @@ func scanTargets(targets []scanTarget, agent, username, wallet, worker string, p
 	return aggregates
 }
 
-func collectFromPool(target scanTarget, agent, username, wallet, worker string) (*logEntry, error) {
+func collectFromPool(target scanTarget, agent, username, wallet, worker string, verbose bool) (*logEntry, error) {
 	client := stratum.NewClient(target.Host, target.Port, username, "x", target.TLS)
 	defer client.Close()
 
@@ -136,7 +142,7 @@ func collectFromPool(target scanTarget, agent, username, wallet, worker string) 
 			client.ExtraNonce2Size(),
 		)
 		if err != nil {
-			logVerbose("failed to decode coinbase for %s:%d: %v", target.Host, target.Port, err)
+			logVerbose(verbose, "failed to decode coinbase for %s:%d: %v", target.Host, target.Port, err)
 		}
 
 		captured = buildJobEntry(target, params, client, agent, username, wallet, worker, currentDiff, pingMs, jobLatency, info)
@@ -267,24 +273,8 @@ func buildJobEntry(target scanTarget, params *stratum.NotifyParams, client *stra
 	}
 }
 
-func printProgress(current, total int) {
-	if total == 0 {
-		return
-	}
-	const width = 30
-	done := current * width / total
-	if done > width {
-		done = width
-	}
-	bar := strings.Repeat("=", done) + strings.Repeat(" ", width-done)
-	fmt.Printf("\rProgress [%s] %d/%d", bar, current, total)
-	if current == total {
-		fmt.Println()
-	}
-}
-
-func logVerbose(format string, args ...interface{}) {
-	if verbose {
+func logVerbose(enabled bool, format string, args ...interface{}) {
+	if enabled {
 		log.Printf(format, args...)
 	}
 }
