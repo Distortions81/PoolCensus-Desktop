@@ -16,10 +16,10 @@ build_darwin=1
 osxcross_root="${OSXCROSS_ROOT:-$HOME/osxcross}"
 osxcross_sdk_tarball="${OSXCROSS_SDK_TARBALL:-}"
 osxcross_sdk_url="${OSXCROSS_SDK_URL:-}"
-macos_min_amd64="${MACOSX_DEPLOYMENT_TARGET_AMD64:-10.13}"
+macos_min_amd64="${MACOSX_DEPLOYMENT_TARGET_AMD64:-10.14}"
 macos_min_arm64="${MACOSX_DEPLOYMENT_TARGET_ARM64:-11.0}"
 macos_plist_min="${MACOSX_PLIST_MIN_VERSION:-}"
-build_macos_arm64=1
+build_macos_arm64=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -142,8 +142,13 @@ ldflags="-s -w"
 darwin_amd64_bin="build/bin/poolcensus-darwin-amd64"
 darwin_arm64_bin="build/bin/poolcensus-darwin-arm64"
 
+if [[ $build_macos_arm64 -eq 0 ]]; then
+  rm -f "$darwin_arm64_bin"
+fi
+
 if have o64-clang; then
   echo " - darwin/amd64 (min macOS ${macos_min_amd64})"
+  darwin_amd64_ldflags="${ldflags} -linkmode external -extldflags=-mmacosx-version-min=${macos_min_amd64}"
   env \
     GOOS=darwin GOARCH=amd64 \
     CGO_ENABLED=1 \
@@ -151,11 +156,12 @@ if have o64-clang; then
     CGO_CFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
     CGO_LDFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
     CC=o64-clang CXX=o64-clang++ \
-    go build -trimpath -ldflags "$ldflags" -o "$darwin_amd64_bin" .
+    go build -trimpath -ldflags "$darwin_amd64_ldflags" -o "$darwin_amd64_bin" .
 fi
 
 if [[ $build_macos_arm64 -eq 1 ]] && have oa64-clang; then
   echo " - darwin/arm64 (min macOS ${macos_min_arm64})"
+  darwin_arm64_ldflags="${ldflags} -linkmode external -extldflags=-mmacosx-version-min=${macos_min_arm64}"
   env \
     GOOS=darwin GOARCH=arm64 \
     CGO_ENABLED=1 \
@@ -163,7 +169,7 @@ if [[ $build_macos_arm64 -eq 1 ]] && have oa64-clang; then
     CGO_CFLAGS="-mmacosx-version-min=${macos_min_arm64}" \
     CGO_LDFLAGS="-mmacosx-version-min=${macos_min_arm64}" \
     CC=oa64-clang CXX=oa64-clang++ \
-    go build -trimpath -ldflags "$ldflags" -o "$darwin_arm64_bin" .
+    go build -trimpath -ldflags "$darwin_arm64_ldflags" -o "$darwin_arm64_bin" .
 fi
 
 app_name="PoolCensus"
@@ -179,13 +185,10 @@ rm -rf "$bundle_dir"
 mkdir -p "$macos_dir" "$resources_dir"
 
 bundle_bin="${macos_dir}/${app_name}"
-if have lipo && [[ -f "$darwin_amd64_bin" && -f "$darwin_arm64_bin" ]]; then
-  echo " - creating universal binary (lipo)"
-  lipo -create "$darwin_amd64_bin" "$darwin_arm64_bin" -output "$bundle_bin"
+if [[ -f "$darwin_amd64_bin" ]]; then
+  cp "$darwin_amd64_bin" "$bundle_bin"
 elif [[ -f "$darwin_arm64_bin" ]]; then
   cp "$darwin_arm64_bin" "$bundle_bin"
-elif [[ -f "$darwin_amd64_bin" ]]; then
-  cp "$darwin_amd64_bin" "$bundle_bin"
 else
   echo "No darwin binaries built; skipping .app creation." >&2
   exit 1

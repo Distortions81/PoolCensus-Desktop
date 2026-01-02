@@ -105,7 +105,7 @@
       <h2>macOS packaging</h2>
       <p>macOS bundles still require Apple tooling. If you’re building on macOS, run <code>scripts/build-mac.sh</code> to produce a native app bundle.</p>
       <p>If you want to attempt macOS builds from Ubuntu, install <code>osxcross</code> via <code>scripts/install-osxcross.sh</code> and then run <code>scripts/build-cross.sh</code>. The macOS portion uses <code>-nopackage</code>, so it won’t produce a signed/notarized <code>.app</code> or <code>.dmg</code> from Linux (it writes <code>poolcensus-darwin-amd64</code>/<code>poolcensus-darwin-arm64</code> into <code>build/bin</code>).</p>
-      <p class="kicker">The cross-built <code>.app</code> targets older Intel macOS by default (via <code>MACOSX_DEPLOYMENT_TARGET_AMD64</code>), while Apple Silicon requires macOS 11+.</p>
+      <p class="kicker">The cross-built <code>.app</code> targets older Intel macOS by default (via <code>MACOSX_DEPLOYMENT_TARGET_AMD64</code>). If you want an Apple Silicon build, pass <code>--macos-arm64</code> (requires macOS 11+).</p>
     </section>
 
     <section>
