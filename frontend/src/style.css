@@ -33,17 +33,16 @@ body {
 }
 
 .page {
-  width: min(1100px, 100%);
+  width: 100%;
+  max-width: 1100px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
 }
 
 .hero {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 24px;
   padding: 24px;
   border-radius: 18px;
   background: var(--surface);
@@ -53,7 +52,7 @@ body {
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(2.2rem, 2vw, 2.8rem);
+  font-size: 2.4rem;
 }
 
 .hero .lead {
@@ -74,7 +73,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
 }
 
 .btn {
@@ -113,7 +111,6 @@ body {
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .progress-meta {
@@ -121,7 +118,6 @@ body {
   justify-content: space-between;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 8px;
 }
 
 .progress-card progress {
@@ -146,7 +142,7 @@ progress::-webkit-progress-value {
 .results {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
+  grid-gap: 18px;
 }
 
 .panel {
@@ -157,7 +153,6 @@ progress::-webkit-progress-value {
   min-height: 220px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .panel-alt {
@@ -168,7 +163,6 @@ progress::-webkit-progress-value {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
 }
 
 .panel h2 {
@@ -182,7 +176,6 @@ progress::-webkit-progress-value {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   flex: 1;
 }
 
@@ -201,7 +194,6 @@ progress::-webkit-progress-value {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
   font-weight: 600;
 }
 
@@ -259,5 +251,52 @@ progress::-webkit-progress-value {
   .cta {
     width: 100%;
     align-items: flex-start;
+  }
+}
+
+/* Layout fallbacks for Safari 12 (macOS 10.14): no flexbox `gap`, no `min()` width, no `clamp()`. */
+.page > * + * {
+  margin-top: 24px;
+}
+
+.hero > * + * {
+  margin-left: 24px;
+}
+
+.cta > * + * {
+  margin-top: 8px;
+}
+
+.progress-card > * + * {
+  margin-top: 12px;
+}
+
+.progress-meta > * + * {
+  margin-left: 8px;
+}
+
+.results > * + * {
+  margin-top: 18px;
+}
+
+.panel > * + * {
+  margin-top: 12px;
+}
+
+.panel header > * + * {
+  margin-left: 12px;
+}
+
+.list > li + li {
+  margin-top: 10px;
+}
+
+.entry-header > * + * {
+  margin-left: 12px;
+}
+
+@supports (font-size: clamp(1rem, 2vw, 3rem)) {
+  .hero h1 {
+    font-size: clamp(2.2rem, 2vw, 2.8rem);
   }
 }

@@ -46,18 +46,52 @@ func (a *PoolCensusApp) StartScan(passes int) (*dashboardView, error) {
 		return nil, fmt.Errorf("scan already running")
 	}
 	a.scanning = true
+	lastView := a.lastView
 	a.mu.Unlock()
-
-	defer func() {
-		a.mu.Lock()
-		a.scanning = false
-		a.mu.Unlock()
-	}()
 
 	if passes <= 0 {
 		passes = defaultScanPasses
 	}
 
+	go func(passes int) {
+		defer func() {
+			a.mu.Lock()
+			a.scanning = false
+			a.mu.Unlock()
+		}()
+
+		view, err := a.runScan(passes)
+		if err != nil {
+			log.Printf("scan failed: %v", err)
+			if a.ctx != nil {
+				runtime.EventsEmit(a.ctx, "scanError", map[string]string{"message": err.Error()})
+			}
+			return
+		}
+
+		a.mu.Lock()
+		a.lastView = view
+		a.mu.Unlock()
+
+		a.emitComplete(totalIssueCount(view))
+	}(passes)
+
+	if lastView == nil {
+		return &dashboardView{}, nil
+	}
+	return lastView, nil
+}
+
+func (a *PoolCensusApp) LastReport() *dashboardView {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.lastView == nil {
+		return &dashboardView{}
+	}
+	return a.lastView
+}
+
+func (a *PoolCensusApp) runScan(passes int) (*dashboardView, error) {
 	exePath, err := os.Executable()
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve executable path: %w", err)
@@ -92,29 +126,11 @@ func (a *PoolCensusApp) StartScan(passes int) (*dashboardView, error) {
 			a.emitProgress(current, total, target)
 		},
 	})
-
 	if len(aggregates) == 0 {
 		return nil, fmt.Errorf("no data collected from pools")
 	}
 
-	view := buildDashboardView(aggregates, defaultSortBy, defaultBaseReward)
-
-	a.mu.Lock()
-	a.lastView = view
-	a.mu.Unlock()
-
-	a.emitComplete(totalErrorCount(aggregates))
-
-	return view, nil
-}
-
-func (a *PoolCensusApp) LastReport() *dashboardView {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.lastView == nil {
-		return &dashboardView{}
-	}
-	return a.lastView
+	return buildDashboardView(aggregates, defaultSortBy, defaultBaseReward), nil
 }
 
 func (a *PoolCensusApp) emitProgress(current, total int, target scanTarget) {
@@ -137,10 +153,9 @@ func (a *PoolCensusApp) emitComplete(errors int) {
 	runtime.EventsEmit(a.ctx, "scanComplete", ScanComplete{ErrorCount: errors})
 }
 
-func totalErrorCount(aggs []*scanAggregate) int {
-	total := 0
-	for _, agg := range aggs {
-		total += agg.errorCount
+func totalIssueCount(view *dashboardView) int {
+	if view == nil {
+		return 0
 	}
-	return total
+	return len(view.IssueEntries)
 }

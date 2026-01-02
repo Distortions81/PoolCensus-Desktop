@@ -64,23 +64,58 @@ const summaryText = document.getElementById('summaryText');
 const cleanCount = document.getElementById('cleanCount');
 const issueCount = document.getElementById('issueCount');
 
-EventsOn('scanProgress', (payload) => {
-  if (!payload) {
-    return;
-  }
-  const percent = payload.Total > 0 ? Math.round((payload.Current / payload.Total) * 100) : 0;
-  progressBar.value = percent;
-  progressLabel.textContent = `Scanning ${payload.Host}:${payload.Port} (${payload.Current}/${payload.Total})`;
-  scanStatus.textContent = 'Scanning pools...';
-});
+function wailsReady() {
+  return (
+    typeof window !== 'undefined' &&
+    window.runtime &&
+    window.go &&
+    window.go.main &&
+    window.go.main.PoolCensusApp
+  );
+}
 
-EventsOn('scanComplete', (payload) => {
-  if (!payload) {
-    return;
-  }
-  progressLabel.textContent = `Completed with ${payload.errorCount} issue(s)`;
-  scanStatus.textContent = payload.errorCount > 0 ? 'Finished with issues' : 'Scan complete';
-});
+function setUiError(message) {
+  progressLabel.textContent = message;
+  scanStatus.textContent = message;
+}
+
+function initWailsBindings() {
+  EventsOn('scanProgress', (payload) => {
+    if (!payload) {
+      return;
+    }
+    const total = payload.total || 0;
+    const current = payload.current || 0;
+    const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+    progressBar.value = percent;
+    progressLabel.textContent = `Scanning ${payload.host}:${payload.port} (${current}/${total})`;
+    scanStatus.textContent = 'Scanning pools...';
+  });
+
+  EventsOn('scanComplete', async (payload) => {
+    if (!payload) {
+      return;
+    }
+    progressLabel.textContent = `Completed with ${payload.errorCount} issue(s)`;
+    scanStatus.textContent = payload.errorCount > 0 ? 'Finished with issues' : 'Scan complete';
+    scanButton.disabled = false;
+
+    try {
+      const view = await LastReport();
+      if (view) {
+        renderView(view);
+      }
+    } catch (err) {
+      console.error('failed to refresh report', err);
+    }
+  });
+
+  EventsOn('scanError', (payload) => {
+    const message = payload && payload.message ? payload.message : 'Scan failed';
+    setUiError(message);
+    scanButton.disabled = false;
+  });
+}
 
 function renderEntries(container, entries, emptyMessage) {
   if (!entries || entries.length === 0) {
@@ -155,15 +190,40 @@ scanButton.addEventListener('click', async () => {
   scanStatus.textContent = 'Initializing...';
 
   try {
-    const view = await StartScan(3);
-    if (view) {
-      renderView(view);
+    if (!wailsReady()) {
+      setUiError('Backend not ready yet (waiting for Wails runtime)');
+      scanButton.disabled = false;
+      return;
     }
+    await StartScan(3);
   } catch (err) {
     progressLabel.textContent = 'Scan failed';
     scanStatus.textContent = `Error: ${(err && err.message) || err}`;
     console.error(err);
-  } finally {
     scanButton.disabled = false;
   }
 });
+
+// On older macOS WebViews, Wails may inject the runtime after the module executes.
+// Wait briefly for the runtime before registering EventsOn handlers.
+(function waitForWails() {
+  if (wailsReady()) {
+    initWailsBindings();
+    scanStatus.textContent = 'Ready';
+    return;
+  }
+
+  const start = Date.now();
+  (function poll() {
+    if (wailsReady()) {
+      initWailsBindings();
+      scanStatus.textContent = 'Ready';
+      return;
+    }
+    if (Date.now() - start > 10000) {
+      setUiError('Wails runtime not available. This build may be incompatible with this macOS/WebView.');
+      return;
+    }
+    setTimeout(poll, 50);
+  })();
+})();
