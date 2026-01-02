@@ -16,6 +16,10 @@ build_darwin=1
 osxcross_root="${OSXCROSS_ROOT:-$HOME/osxcross}"
 osxcross_sdk_tarball="${OSXCROSS_SDK_TARBALL:-}"
 osxcross_sdk_url="${OSXCROSS_SDK_URL:-}"
+macos_min_amd64="${MACOSX_DEPLOYMENT_TARGET_AMD64:-10.13}"
+macos_min_arm64="${MACOSX_DEPLOYMENT_TARGET_ARM64:-11.0}"
+macos_plist_min="${MACOSX_PLIST_MIN_VERSION:-}"
+build_macos_arm64=1
 
 for arg in "$@"; do
   case "$arg" in
@@ -24,6 +28,12 @@ for arg in "$@"; do
     --osxcross-root=*) osxcross_root="${arg#*=}" ;;
     --osxcross-sdk-tarball=*) osxcross_sdk_tarball="${arg#*=}" ;;
     --osxcross-sdk-url=*) osxcross_sdk_url="${arg#*=}" ;;
+    --macos-min=*) macos_min_amd64="${arg#*=}" ;;
+    --macos-min-amd64=*) macos_min_amd64="${arg#*=}" ;;
+    --macos-min-arm64=*) macos_min_arm64="${arg#*=}" ;;
+    --macos-plist-min=*) macos_plist_min="${arg#*=}" ;;
+    --no-macos-arm64) build_macos_arm64=0 ;;
+    --macos-arm64) build_macos_arm64=1 ;;
   esac
 done
 
@@ -133,19 +143,25 @@ darwin_amd64_bin="build/bin/poolcensus-darwin-amd64"
 darwin_arm64_bin="build/bin/poolcensus-darwin-arm64"
 
 if have o64-clang; then
-  echo " - darwin/amd64"
+  echo " - darwin/amd64 (min macOS ${macos_min_amd64})"
   env \
     GOOS=darwin GOARCH=amd64 \
     CGO_ENABLED=1 \
+    MACOSX_DEPLOYMENT_TARGET="${macos_min_amd64}" \
+    CGO_CFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
+    CGO_LDFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
     CC=o64-clang CXX=o64-clang++ \
     go build -trimpath -ldflags "$ldflags" -o "$darwin_amd64_bin" .
 fi
 
-if have oa64-clang; then
-  echo " - darwin/arm64"
+if [[ $build_macos_arm64 -eq 1 ]] && have oa64-clang; then
+  echo " - darwin/arm64 (min macOS ${macos_min_arm64})"
   env \
     GOOS=darwin GOARCH=arm64 \
     CGO_ENABLED=1 \
+    MACOSX_DEPLOYMENT_TARGET="${macos_min_arm64}" \
+    CGO_CFLAGS="-mmacosx-version-min=${macos_min_arm64}" \
+    CGO_LDFLAGS="-mmacosx-version-min=${macos_min_arm64}" \
     CC=oa64-clang CXX=oa64-clang++ \
     go build -trimpath -ldflags "$ldflags" -o "$darwin_arm64_bin" .
 fi
@@ -177,6 +193,8 @@ fi
 
 chmod +x "$bundle_bin"
 
+app_min_version="${macos_plist_min:-$macos_min_amd64}"
+
 if [[ -f "$icon_src" ]]; then
   if have convert || ensure_cmd convert imagemagick; then
     convert "$icon_src" -define icon:auto-resize=16,32,64,128,256,512 "$icon_dest" || true
@@ -198,6 +216,8 @@ cat <<EOF >"$plist_path"
   <string>${app_name}</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>${app_min_version}</string>
   <key>CFBundleVersion</key>
   <string>1.0.0</string>
   <key>CFBundleShortVersionString</key>
