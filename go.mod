@@ -11,6 +11,8 @@ require (
 	github.com/wailsapp/wails/v2 v2.11.0
 )
 
+replace github.com/wailsapp/wails/v2 => ./third_party/wails
+
 require (
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect

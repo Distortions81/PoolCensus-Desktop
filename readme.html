@@ -106,6 +106,7 @@
       <p>macOS bundles still require Apple tooling. If you’re building on macOS, run <code>scripts/build-mac.sh</code> to produce a native app bundle.</p>
       <p>If you want to attempt macOS builds from Ubuntu, install <code>osxcross</code> via <code>scripts/install-osxcross.sh</code> and then run <code>scripts/build-cross.sh</code> (or <code>scripts/build-cross.sh --macos-only</code>). This produces <code>build/bin/PoolCensus.app</code> and zips it to <code>build/dist/PoolCensus-macOS.app.zip</code> (unsigned/notarized).</p>
       <p class="kicker">The cross-built <code>.app</code> targets older Intel macOS by default (via <code>MACOSX_DEPLOYMENT_TARGET_AMD64</code>). If you want an Apple Silicon build, pass <code>--macos-arm64</code> (requires macOS 11+).</p>
+      <p class="kicker">Note: macOS 10.14 ships Safari 12, which cannot parse optional chaining (<code>?.</code>). Wails 2.11’s embedded runtime JS includes optional chaining, so this repo uses a patched Wails runtime via <code>go.mod</code> <code>replace</code> to <code>third_party/wails</code> for 10.14 compatibility.</p>
     </section>
 
     <section>
