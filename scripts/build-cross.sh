@@ -20,11 +20,13 @@ macos_min_amd64="${MACOSX_DEPLOYMENT_TARGET_AMD64:-10.14}"
 macos_min_arm64="${MACOSX_DEPLOYMENT_TARGET_ARM64:-11.0}"
 macos_plist_min="${MACOSX_PLIST_MIN_VERSION:-}"
 build_macos_arm64=0
+clean_outputs=1
 
 for arg in "$@"; do
   case "$arg" in
     --no-install-deps) install_deps=0 ;;
     --no-darwin) build_darwin=0 ;;
+    --no-clean) clean_outputs=0 ;;
     --osxcross-root=*) osxcross_root="${arg#*=}" ;;
     --osxcross-sdk-tarball=*) osxcross_sdk_tarball="${arg#*=}" ;;
     --osxcross-sdk-url=*) osxcross_sdk_url="${arg#*=}" ;;
@@ -36,6 +38,14 @@ for arg in "$@"; do
     --macos-arm64) build_macos_arm64=1 ;;
   esac
 done
+
+if [[ $clean_outputs -eq 1 ]]; then
+  rm -rf build/dist
+  rm -rf build/bin/PoolCensus.app
+  rm -f build/bin/poolcensus build/bin/poolcensus.exe
+  rm -f build/bin/poolcensus-darwin-amd64 build/bin/poolcensus-darwin-arm64
+  rm -f build/dist/PoolCensus-Linux-x86_64.zip build/dist/PoolCensus-Windows-x86_64.zip build/dist/PoolCensus-macOS.app.zip
+fi
 
 if ! command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
   if [[ $install_deps -eq 1 ]] && command -v apt-get >/dev/null 2>&1; then
