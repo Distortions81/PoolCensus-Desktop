@@ -166,7 +166,7 @@ if have o64-clang; then
     CGO_CFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
     CGO_LDFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
     CC=o64-clang CXX=o64-clang++ \
-    go build -trimpath -ldflags "$darwin_amd64_ldflags" -o "$darwin_amd64_bin" .
+    go build -trimpath -tags production -ldflags "$darwin_amd64_ldflags" -o "$darwin_amd64_bin" .
 fi
 
 if [[ $build_macos_arm64 -eq 1 ]] && have oa64-clang; then
@@ -179,7 +179,7 @@ if [[ $build_macos_arm64 -eq 1 ]] && have oa64-clang; then
     CGO_CFLAGS="-mmacosx-version-min=${macos_min_arm64}" \
     CGO_LDFLAGS="-mmacosx-version-min=${macos_min_arm64}" \
     CC=oa64-clang CXX=oa64-clang++ \
-    go build -trimpath -ldflags "$darwin_arm64_ldflags" -o "$darwin_arm64_bin" .
+    go build -trimpath -tags production -ldflags "$darwin_arm64_ldflags" -o "$darwin_arm64_bin" .
 fi
 
 app_name="PoolCensus"
