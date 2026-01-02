@@ -3,15 +3,24 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-if [[ -e build && ! -w build ]]; then
-  echo "build/ is not writable; if you previously ran wails with sudo, fix ownership:"
-  echo "  sudo chown -R $(id -un):$(id -gn) build"
-  echo "or remove it:"
-  echo "  sudo rm -rf build"
-  exit 1
-fi
+assert_writable_dir() {
+  local path="$1"
+  if [[ -e "$path" && ! -w "$path" ]]; then
+    echo "${path} is not writable; if you previously ran builds with sudo, fix ownership:"
+    echo "  sudo chown -R $(id -un):$(id -gn) ${path}"
+    echo "or remove it:"
+    echo "  sudo rm -rf ${path}"
+    exit 1
+  fi
+}
+
+assert_writable_dir build
+assert_writable_dir frontend
+assert_writable_dir frontend/dist
 
 install_deps=1
+build_linux=1
+build_windows=1
 build_darwin=1
 osxcross_root="${OSXCROSS_ROOT:-$HOME/osxcross}"
 osxcross_sdk_tarball="${OSXCROSS_SDK_TARBALL:-}"
@@ -24,8 +33,38 @@ clean_outputs=1
 
 for arg in "$@"; do
   case "$arg" in
+    -h|--help)
+      cat <<'EOF'
+Usage: scripts/build-cross.sh [options]
+
+Builds frontend once, then produces platform artifacts under build/dist/.
+
+Options:
+  --no-install-deps   Don't apt-get missing deps (mingw-w64/zip/etc)
+  --no-clean          Keep previous build outputs
+  --no-linux          Skip Linux build/zip
+  --no-windows        Skip Windows build/zip
+  --no-darwin         Skip macOS build/zip
+  --linux-only        Build only Linux
+  --windows-only      Build only Windows
+  --macos-only        Build only macOS (.app zip via osxcross)
+
+macOS (osxcross):
+  --osxcross-root=DIR         (default: $OSXCROSS_ROOT or $HOME/osxcross)
+  --osxcross-sdk-tarball=PATH optional auto-install helper input
+  --osxcross-sdk-url=URL      optional auto-install helper input
+  --macos-min=VERSION         Intel minimum (default: 10.14)
+  --macos-arm64               Also build Apple Silicon (default off)
+EOF
+      exit 0
+      ;;
     --no-install-deps) install_deps=0 ;;
+    --no-linux) build_linux=0 ;;
+    --no-windows) build_windows=0 ;;
     --no-darwin) build_darwin=0 ;;
+    --linux-only) build_linux=1; build_windows=0; build_darwin=0 ;;
+    --windows-only) build_linux=0; build_windows=1; build_darwin=0 ;;
+    --macos-only) build_linux=0; build_windows=0; build_darwin=1 ;;
     --no-clean) clean_outputs=0 ;;
     --osxcross-root=*) osxcross_root="${arg#*=}" ;;
     --osxcross-sdk-tarball=*) osxcross_sdk_tarball="${arg#*=}" ;;
@@ -45,9 +84,10 @@ if [[ $clean_outputs -eq 1 ]]; then
   rm -f build/bin/poolcensus build/bin/poolcensus.exe
   rm -f build/bin/poolcensus-darwin-amd64 build/bin/poolcensus-darwin-arm64
   rm -f build/dist/PoolCensus-Linux-x86_64.zip build/dist/PoolCensus-Windows-x86_64.zip build/dist/PoolCensus-macOS.app.zip
+  rm -rf frontend/dist
 fi
 
-if ! command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
+if [[ $build_windows -eq 1 ]] && ! command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
   if [[ $install_deps -eq 1 ]] && command -v apt-get >/dev/null 2>&1; then
     echo "Installing mingw-w64 (Ubuntu 24.04)..."
     if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
@@ -71,11 +111,29 @@ npm install
 npm run build
 cd ..
 
-echo "Building Linux target..."
-wails build --platform linux/amd64
+if [[ $build_linux -eq 1 ]] && command -v pkg-config >/dev/null 2>&1; then
+  if ! pkg-config --exists webkit2gtk-4.0 && pkg-config --exists webkit2gtk-4.1; then
+    PKGCONFIG_DIR="/usr/lib/x86_64-linux-gnu/pkgconfig"
+    if [[ -f "${PKGCONFIG_DIR}/webkit2gtk-4.1.pc" && ! -f "${PKGCONFIG_DIR}/webkit2gtk-4.0.pc" ]]; then
+      echo "Ubuntu 24.04 WebKitGTK detected; creating webkit2gtk-4.0 pkg-config alias..."
+      if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+        ln -sf "webkit2gtk-4.1.pc" "${PKGCONFIG_DIR}/webkit2gtk-4.0.pc"
+      else
+        sudo ln -sf "webkit2gtk-4.1.pc" "${PKGCONFIG_DIR}/webkit2gtk-4.0.pc"
+      fi
+    fi
+  fi
+fi
 
-echo "Building Windows target (cross-compile)..."
-wails build --platform windows/amd64 -nopackage -o poolcensus.exe
+if [[ $build_linux -eq 1 ]]; then
+  echo "Building Linux target..."
+  wails build --platform linux/amd64
+fi
+
+if [[ $build_windows -eq 1 ]]; then
+  echo "Building Windows target (cross-compile)..."
+  wails build --platform windows/amd64 -nopackage -o poolcensus.exe
+fi
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
@@ -104,14 +162,24 @@ dist_dir="build/dist"
 mkdir -p "$dist_dir"
 ensure_cmd zip zip
 
-echo "Packaging Linux + Windows .zip artifacts..."
-zip -q -j -r "${dist_dir}/PoolCensus-Linux-x86_64.zip" "build/bin/poolcensus"
-zip -q -j -r "${dist_dir}/PoolCensus-Windows-x86_64.zip" "build/bin/poolcensus.exe"
+if [[ $build_linux -eq 1 ]]; then
+  echo "Packaging Linux .zip artifact..."
+  zip -q -j -r "${dist_dir}/PoolCensus-Linux-x86_64.zip" "build/bin/poolcensus"
+fi
+
+if [[ $build_windows -eq 1 ]]; then
+  echo "Packaging Windows .zip artifact..."
+  zip -q -j -r "${dist_dir}/PoolCensus-Windows-x86_64.zip" "build/bin/poolcensus.exe"
+fi
 
 if [[ $build_darwin -eq 0 ]]; then
   echo "Dist zips:"
-  echo " - ${dist_dir}/PoolCensus-Linux-x86_64.zip"
-  echo " - ${dist_dir}/PoolCensus-Windows-x86_64.zip"
+  if [[ $build_linux -eq 1 ]]; then
+    echo " - ${dist_dir}/PoolCensus-Linux-x86_64.zip"
+  fi
+  if [[ $build_windows -eq 1 ]]; then
+    echo " - ${dist_dir}/PoolCensus-Windows-x86_64.zip"
+  fi
   exit 0
 fi
 
@@ -164,7 +232,7 @@ if have o64-clang; then
     CGO_ENABLED=1 \
     MACOSX_DEPLOYMENT_TARGET="${macos_min_amd64}" \
     CGO_CFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
-    CGO_LDFLAGS="-mmacosx-version-min=${macos_min_amd64}" \
+    CGO_LDFLAGS="-mmacosx-version-min=${macos_min_amd64} -Wl,-weak_framework,UniformTypeIdentifiers" \
     CC=o64-clang CXX=o64-clang++ \
     go build -trimpath -tags production -ldflags "$darwin_amd64_ldflags" -o "$darwin_amd64_bin" .
 fi
@@ -261,6 +329,10 @@ echo "Done. macOS output:"
  echo " - ${dist_dir}/${app_name}-macOS.app.zip"
 
 echo "Dist zips:"
-echo " - ${dist_dir}/PoolCensus-Linux-x86_64.zip"
-echo " - ${dist_dir}/PoolCensus-Windows-x86_64.zip"
+if [[ $build_linux -eq 1 ]]; then
+  echo " - ${dist_dir}/PoolCensus-Linux-x86_64.zip"
+fi
+if [[ $build_windows -eq 1 ]]; then
+  echo " - ${dist_dir}/PoolCensus-Windows-x86_64.zip"
+fi
 echo " - ${dist_dir}/${app_name}-macOS.app.zip"

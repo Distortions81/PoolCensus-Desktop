@@ -92,10 +92,10 @@
       <p>After dependencies are installed, the build helpers regenerate the frontend bundle and produce platform-specific distributions.</p>
       <ul>
         <li><code>scripts/build-all.sh</code> – convenience entrypoint; runs <code>scripts/build-cross.sh</code> (Linux + Windows, and macOS if <code>osxcross</code> is configured).</li>
-        <li><code>scripts/build-linux.sh</code> – runs <code>npm run build</code> in <code>frontend/</code> and then <code>wails build</code> for Linux.</li>
-        <li><code>scripts/build-mac.sh</code> – equivalent packaging steps for macOS.</li>
+        <li><code>scripts/build-linux.sh</code> – Linux-only build and zip (wrapper around <code>scripts/build-cross.sh --linux-only</code>).</li>
+        <li><code>scripts/build-mac.sh</code> – builds a native macOS app on macOS; on Linux it cross-builds via <code>osxcross</code> (<code>--macos-only</code>).</li>
         <li><code>scripts/build-windows.bat</code> – runs the frontend build and <code>wails build</code> from a Windows shell.</li>
-        <li><code>scripts/build-cross.sh</code> – Ubuntu 24.04 helper that builds Linux + Windows and optionally macOS if <code>osxcross</code> is installed (installs <code>mingw-w64</code> automatically; pass <code>--no-install-deps</code> or <code>--no-darwin</code>).</li>
+        <li><code>scripts/build-cross.sh</code> – Ubuntu 24.04 helper that builds Linux + Windows and optionally macOS if <code>osxcross</code> is installed (auto-installs <code>mingw-w64</code>; pass <code>--no-install-deps</code>, <code>--no-darwin</code>, <code>--no-windows</code>, or <code>--no-linux</code>).</li>
         <li><code>scripts/install-osxcross.sh</code> – installs <code>osxcross</code> (requires you to supply a macOS SDK tarball you are licensed to use).</li>
       </ul>
       <p class="kicker">Use these scripts when you’re ready to create packaged binaries for each platform.</p>
@@ -104,7 +104,7 @@
     <section>
       <h2>macOS packaging</h2>
       <p>macOS bundles still require Apple tooling. If you’re building on macOS, run <code>scripts/build-mac.sh</code> to produce a native app bundle.</p>
-      <p>If you want to attempt macOS builds from Ubuntu, install <code>osxcross</code> via <code>scripts/install-osxcross.sh</code> and then run <code>scripts/build-cross.sh</code>. The macOS portion uses <code>-nopackage</code>, so it won’t produce a signed/notarized <code>.app</code> or <code>.dmg</code> from Linux (it writes <code>poolcensus-darwin-amd64</code>/<code>poolcensus-darwin-arm64</code> into <code>build/bin</code>).</p>
+      <p>If you want to attempt macOS builds from Ubuntu, install <code>osxcross</code> via <code>scripts/install-osxcross.sh</code> and then run <code>scripts/build-cross.sh</code> (or <code>scripts/build-cross.sh --macos-only</code>). This produces <code>build/bin/PoolCensus.app</code> and zips it to <code>build/dist/PoolCensus-macOS.app.zip</code> (unsigned/notarized).</p>
       <p class="kicker">The cross-built <code>.app</code> targets older Intel macOS by default (via <code>MACOSX_DEPLOYMENT_TARGET_AMD64</code>). If you want an Apple Silicon build, pass <code>--macos-arm64</code> (requires macOS 11+).</p>
     </section>
 

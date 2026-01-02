@@ -3,11 +3,14 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-echo "Ensuring frontend bundle is current..."
-cd frontend
-npm install
-npm run build
-
-echo "Packaging macOS app with Wails..."
-cd ..
-wails build
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  echo "Building native macOS app via Wails..."
+  cd frontend
+  npm install
+  npm run build
+  cd ..
+  wails build
+else
+  echo "Building macOS .app from Linux via osxcross..."
+  bash ./scripts/build-cross.sh --macos-only "$@"
+fi
