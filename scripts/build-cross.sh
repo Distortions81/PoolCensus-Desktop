@@ -57,7 +57,41 @@ wails build --platform linux/amd64
 echo "Building Windows target (cross-compile)..."
 wails build --platform windows/amd64 -nopackage -o poolcensus.exe
 
+have() { command -v "$1" >/dev/null 2>&1; }
+
+ensure_cmd() {
+  local cmd="$1"
+  local pkg="${2:-$1}"
+  if have "$cmd"; then
+    return 0
+  fi
+  if [[ $install_deps -eq 1 ]] && have apt-get; then
+    echo "Installing $pkg..."
+    if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+      apt-get update -qq
+      apt-get install -y "$pkg"
+    else
+      sudo apt-get update -qq
+      sudo apt-get install -y "$pkg"
+    fi
+    return 0
+  fi
+  echo "$cmd not found; please install $pkg (or re-run without --no-install-deps)" >&2
+  return 1
+}
+
+dist_dir="build/dist"
+mkdir -p "$dist_dir"
+ensure_cmd zip zip
+
+echo "Packaging Linux + Windows .zip artifacts..."
+zip -q -j -r "${dist_dir}/PoolCensus-Linux-x86_64.zip" "build/bin/poolcensus"
+zip -q -j -r "${dist_dir}/PoolCensus-Windows-x86_64.zip" "build/bin/poolcensus.exe"
+
 if [[ $build_darwin -eq 0 ]]; then
+  echo "Dist zips:"
+  echo " - ${dist_dir}/PoolCensus-Linux-x86_64.zip"
+  echo " - ${dist_dir}/PoolCensus-Windows-x86_64.zip"
   exit 0
 fi
 
@@ -66,23 +100,7 @@ if [[ -n "$osxcross_root" && -d "$osxcross_root/target/bin" ]]; then
   export PATH="$OSXCROSS_ROOT/target/bin:$PATH"
 fi
 
-find_cc() {
-  local candidate
-  for candidate in "$@"; do
-    if command -v "$candidate" >/dev/null 2>&1; then
-      echo "$candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-
-cc_amd64="$(find_cc o64-clang x86_64-apple-darwin*-clang || true)"
-cxx_amd64="$(find_cc o64-clang++ x86_64-apple-darwin*-clang++ || true)"
-cc_arm64="$(find_cc oa64-clang aarch64-apple-darwin*-clang arm64-apple-darwin*-clang || true)"
-cxx_arm64="$(find_cc oa64-clang++ aarch64-apple-darwin*-clang++ arm64-apple-darwin*-clang++ || true)"
-
-if [[ -z "${cc_amd64}${cc_arm64}" ]]; then
+if ! have o64-clang && ! have oa64-clang; then
   if [[ -x "./scripts/install-osxcross.sh" ]] && [[ -n "${osxcross_sdk_tarball}${osxcross_sdk_url}" ]]; then
     echo "osxcross toolchain not found; attempting install..."
     install_args=(--root "$osxcross_root")
@@ -98,14 +116,9 @@ if [[ -z "${cc_amd64}${cc_arm64}" ]]; then
     bash ./scripts/install-osxcross.sh "${install_args[@]}"
     export OSXCROSS_ROOT="$osxcross_root"
     export PATH="$OSXCROSS_ROOT/target/bin:$PATH"
-
-    cc_amd64="$(find_cc o64-clang x86_64-apple-darwin*-clang || true)"
-    cxx_amd64="$(find_cc o64-clang++ x86_64-apple-darwin*-clang++ || true)"
-    cc_arm64="$(find_cc oa64-clang aarch64-apple-darwin*-clang arm64-apple-darwin*-clang || true)"
-    cxx_arm64="$(find_cc oa64-clang++ aarch64-apple-darwin*-clang++ arm64-apple-darwin*-clang++ || true)"
   else
     echo "osxcross toolchain not found; skipping macOS targets."
-    echo "To enable darwin builds:"
+    echo "To enable .app builds from Ubuntu:"
     echo "  - Install osxcross: bash scripts/install-osxcross.sh --sdk-tarball /path/to/MacOSX13.3.sdk.tar.xz"
     echo "  - Or set OSXCROSS_SDK_TARBALL and rerun this script"
     echo "  - Or pass --no-darwin to silence"
@@ -113,15 +126,100 @@ if [[ -z "${cc_amd64}${cc_arm64}" ]]; then
   fi
 fi
 
-echo "Building macOS targets via osxcross (-nopackage)..."
-if [[ -n "$cc_amd64" && -n "$cxx_amd64" ]]; then
-  echo " - darwin/amd64 (CC=$cc_amd64)"
-  CC="$cc_amd64" CXX="$cxx_amd64" CGO_ENABLED=1 wails build --platform darwin/amd64 -nopackage
+echo "Building macOS binaries via osxcross..."
+
+ldflags="-s -w"
+darwin_amd64_bin="build/bin/poolcensus-darwin-amd64"
+darwin_arm64_bin="build/bin/poolcensus-darwin-arm64"
+
+if have o64-clang; then
+  echo " - darwin/amd64"
+  env \
+    GOOS=darwin GOARCH=amd64 \
+    CGO_ENABLED=1 \
+    CC=o64-clang CXX=o64-clang++ \
+    go build -trimpath -ldflags "$ldflags" -o "$darwin_amd64_bin" .
 fi
 
-if [[ -n "$cc_arm64" && -n "$cxx_arm64" ]]; then
-  echo " - darwin/arm64 (CC=$cc_arm64)"
-  CC="$cc_arm64" CXX="$cxx_arm64" CGO_ENABLED=1 wails build --platform darwin/arm64 -nopackage
+if have oa64-clang; then
+  echo " - darwin/arm64"
+  env \
+    GOOS=darwin GOARCH=arm64 \
+    CGO_ENABLED=1 \
+    CC=oa64-clang CXX=oa64-clang++ \
+    go build -trimpath -ldflags "$ldflags" -o "$darwin_arm64_bin" .
 fi
 
-echo "Done. Note: darwin builds from Linux are -nopackage (no signed/notarized .app/.dmg)."
+app_name="PoolCensus"
+bundle_dir="build/bin/${app_name}.app"
+macos_dir="${bundle_dir}/Contents/MacOS"
+resources_dir="${bundle_dir}/Contents/Resources"
+plist_path="${bundle_dir}/Contents/Info.plist"
+icon_src="build/appicon.png"
+icon_dest="${resources_dir}/PoolCensus.icns"
+
+echo "Creating ${app_name}.app bundle..."
+rm -rf "$bundle_dir"
+mkdir -p "$macos_dir" "$resources_dir"
+
+bundle_bin="${macos_dir}/${app_name}"
+if have lipo && [[ -f "$darwin_amd64_bin" && -f "$darwin_arm64_bin" ]]; then
+  echo " - creating universal binary (lipo)"
+  lipo -create "$darwin_amd64_bin" "$darwin_arm64_bin" -output "$bundle_bin"
+elif [[ -f "$darwin_arm64_bin" ]]; then
+  cp "$darwin_arm64_bin" "$bundle_bin"
+elif [[ -f "$darwin_amd64_bin" ]]; then
+  cp "$darwin_amd64_bin" "$bundle_bin"
+else
+  echo "No darwin binaries built; skipping .app creation." >&2
+  exit 1
+fi
+
+chmod +x "$bundle_bin"
+
+if [[ -f "$icon_src" ]]; then
+  if have convert || ensure_cmd convert imagemagick; then
+    convert "$icon_src" -define icon:auto-resize=16,32,64,128,256,512 "$icon_dest" || true
+  else
+    echo "convert/imagemagick not available; skipping .icns generation."
+  fi
+fi
+
+cat <<EOF >"$plist_path"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>${app_name}</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.poolcensus.desktop</string>
+  <key>CFBundleName</key>
+  <string>${app_name}</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleVersion</key>
+  <string>1.0.0</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>CFBundleIconFile</key>
+  <string>PoolCensus.icns</string>
+</dict>
+</plist>
+EOF
+
+ensure_cmd zip zip
+
+(
+  cd build/bin
+  zip -q -r "../dist/${app_name}-macOS.app.zip" "${app_name}.app"
+)
+
+echo "Done. macOS output:"
+ echo " - ${bundle_dir}"
+ echo " - ${dist_dir}/${app_name}-macOS.app.zip"
+
+echo "Dist zips:"
+echo " - ${dist_dir}/PoolCensus-Linux-x86_64.zip"
+echo " - ${dist_dir}/PoolCensus-Windows-x86_64.zip"
+echo " - ${dist_dir}/${app_name}-macOS.app.zip"
