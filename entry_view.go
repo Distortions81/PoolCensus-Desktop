@@ -197,10 +197,10 @@ func collectIssues(entry *logEntry, workerShare, workerPercent float64) ([]issue
 
 func rewardNoteAndClass(total, baseReward float64) (string, string) {
 	if total <= 0.00000001 {
-		return "Payout not recorded yet", "reward-red"
+		return "Unable to retrieve", "reward-red"
 	}
 	if total > baseReward {
-		return "Total payout amount correct", "reward-blue"
+		return "", "reward-blue"
 	}
 	return fmt.Sprintf("Total payout less than block reward (%s BTC)", formatTrimmedFloat(total, 8)), "reward-red"
 }

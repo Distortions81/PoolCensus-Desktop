@@ -1,6 +1,6 @@
 import './style.css';
 
-import {EventsOn} from '../wailsjs/runtime/runtime';
+import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import {LastReport, StartScan} from '../wailsjs/go/main/PoolCensusApp';
 
 const app = document.getElementById('app');
@@ -39,7 +39,7 @@ app.innerHTML = `
       </article>
       <article class="panel panel-alt">
         <header>
-          <h2>Issue pools</h2>
+          <h2>Pools With Issues</h2>
           <p class="muted"><span id="issueCount">0</span> entries</p>
         </header>
         <ul class="list" id="issueList">
@@ -52,6 +52,16 @@ app.innerHTML = `
       <p class="muted" id="summaryText">Last scan: none</p>
     </section>
   </div>
+
+  <div class="modal-overlay hidden" id="detailOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+      <header class="modal-header">
+        <h2 id="detailTitle">Pool details</h2>
+        <button class="btn ghost" id="detailCloseButton" type="button">Close</button>
+      </header>
+      <div class="modal-body" id="detailBody"></div>
+    </div>
+  </div>
 `;
 
 const scanButton = document.getElementById('scanButton');
@@ -63,6 +73,12 @@ const issueList = document.getElementById('issueList');
 const summaryText = document.getElementById('summaryText');
 const cleanCount = document.getElementById('cleanCount');
 const issueCount = document.getElementById('issueCount');
+const detailOverlay = document.getElementById('detailOverlay');
+const detailBody = document.getElementById('detailBody');
+const detailTitle = document.getElementById('detailTitle');
+const detailCloseButton = document.getElementById('detailCloseButton');
+
+let currentView = null;
 
 function wailsReady() {
   return (
@@ -117,13 +133,143 @@ function initWailsBindings() {
   });
 }
 
-function renderEntries(container, entries, emptyMessage) {
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function openDetails(hostEntry) {
+  if (!hostEntry || !hostEntry.Host || !hostEntry.Host.Latest) {
+    return;
+  }
+
+  const latest = hostEntry.Host.Latest;
+  const poolName = hostEntry.PoolName || 'Pool details';
+  const address = latest.Host ? `${latest.Host}:${latest.Port}` : 'unknown';
+  const rewardNote = latest.RewardNote || '';
+
+  const details = [
+    `<div class="detail-row"><span class="detail-key">Endpoint</span><span class="detail-value mono">${escapeHtml(address)}</span></div>`,
+    `<div class="detail-row"><span class="detail-key">Ping</span><span class="detail-value mono">${escapeHtml(latest.Ping || 'n/a')}</span></div>`,
+    `<div class="detail-row"><span class="detail-key">Total payout</span><span class="detail-value mono">${escapeHtml(
+      typeof latest.TotalPayout === 'number' ? `${latest.TotalPayout.toFixed(8)} BTC` : 'n/a',
+    )}</span></div>`,
+  ];
+
+  if (latest.TLS) {
+    details.unshift(
+      `<div class="detail-row"><span class="detail-key">TLS</span><span class="detail-value"><span class="badge tls">TLS</span></span></div>`,
+    );
+  }
+
+  if (typeof latest.WorkerPercent === 'number' && latest.WorkerPercent > 0) {
+    details.push(
+      `<div class="detail-row"><span class="detail-key">Worker share</span><span class="detail-value mono">${escapeHtml(
+        `${latest.WorkerPercent.toFixed(2)}%`,
+      )}</span></div>`,
+    );
+  }
+
+  if (rewardNote) {
+    details.push(
+      `<div class="detail-row"><span class="detail-key">Note</span><span class="detail-value">${escapeHtml(
+        rewardNote,
+      )}</span></div>`,
+    );
+  }
+
+  if (!latest.Connected) {
+    details.push(
+      `<div class="detail-row"><span class="detail-key">Status</span><span class="detail-value">Disconnected</span></div>`,
+    );
+    if (latest.Error) {
+      details.push(
+        `<div class="detail-row"><span class="detail-key">Last error</span><span class="detail-value mono">${escapeHtml(
+          latest.Error,
+        )}</span></div>`,
+      );
+    }
+  }
+
+  const issues = Array.isArray(latest.Issues) ? latest.Issues : [];
+  if (issues.length > 0) {
+    details.push(
+      `<div class="detail-section">
+        <div class="detail-key">Issues</div>
+        <ul class="detail-list">
+          ${issues
+            .map((issue) => `<li>${escapeHtml(issue && issue.Message ? issue.Message : 'Issue')}</li>`)
+            .join('')}
+        </ul>
+      </div>`,
+    );
+  }
+
+  const scanUrl = latest.ScanURL && latest.ScanURL !== '#' ? latest.ScanURL : '';
+  if (scanUrl) {
+    details.push(
+      `<div class="detail-actions"><button class="btn ghost" id="openDetailUrl" type="button">Open details</button></div>`,
+    );
+  }
+
+  detailTitle.textContent = poolName;
+  detailBody.innerHTML = details.join('');
+
+  if (scanUrl) {
+    const openButton = document.getElementById('openDetailUrl');
+    if (openButton) {
+      openButton.addEventListener('click', () => BrowserOpenURL(scanUrl), {once: true});
+    }
+  }
+
+  detailOverlay.classList.remove('hidden');
+  detailOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeDetails() {
+  detailOverlay.classList.add('hidden');
+  detailOverlay.setAttribute('aria-hidden', 'true');
+  detailBody.innerHTML = '';
+}
+
+function attachEntryHandlers(container, listKey) {
+  container.addEventListener('click', (event) => {
+    const item = event.target.closest('li[data-entry-index]');
+    if (!item || !container.contains(item)) {
+      return;
+    }
+    const index = Number(item.getAttribute('data-entry-index'));
+    const entries = currentView ? currentView[listKey] : null;
+    if (!entries || Number.isNaN(index) || index < 0 || index >= entries.length) {
+      return;
+    }
+    openDetails(entries[index]);
+  });
+
+  container.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+    const item = event.target.closest('li[data-entry-index]');
+    if (!item || !container.contains(item)) {
+      return;
+    }
+    event.preventDefault();
+    item.click();
+  });
+}
+
+function renderEntries(container, entries, emptyMessage, listKey) {
   if (!entries || entries.length === 0) {
     container.innerHTML = `<li class="empty">${emptyMessage}</li>`;
     return;
   }
   container.innerHTML = entries
-    .map((entry) => {
+    .map((entry, index) => {
       const latest = entry && entry.Host && entry.Host.Latest ? entry.Host.Latest : null;
       const hostLabel =
         latest && latest.Host
@@ -134,13 +280,21 @@ function renderEntries(container, entries, emptyMessage) {
       const ping = latest && latest.Ping != null ? latest.Ping : 'n/a';
       const badge = latest && latest.PanelClass === 'panel-bad' ? 'issue' : 'good';
       const rewardNote = latest && latest.RewardNote ? latest.RewardNote : '';
+      const metaParts = [hostLabel];
+      if (rewardNote) {
+        metaParts.push(rewardNote);
+      }
+      const tlsTag = latest && latest.TLS ? '<span class="badge tls">TLS</span>' : '';
       return `
-        <li>
+        <li role="button" tabindex="0" data-entry-index="${index}" data-entry-kind="${listKey}">
           <div class="entry-header">
             <span class="badge ${badge}">${entry.PoolName}</span>
-            <span class="entry-ping">${ping}</span>
+            <span class="entry-tags">
+              ${tlsTag}
+              <span class="entry-ping">${ping}</span>
+            </span>
           </div>
-          <p class="entry-meta">${hostLabel} · ${rewardNote}</p>
+          <p class="entry-meta">${metaParts.join(' · ')}</p>
         </li>
       `;
     })
@@ -160,9 +314,10 @@ function refreshSummary(view) {
 }
 
 function renderView(view) {
+  currentView = view;
   refreshSummary(view);
-  renderEntries(cleanList, view.CleanEntries, 'No clean entries');
-  renderEntries(issueList, view.IssueEntries, 'No issue entries');
+  renderEntries(cleanList, view.CleanEntries, 'No clean entries', 'CleanEntries');
+  renderEntries(issueList, view.IssueEntries, 'No issue entries', 'IssueEntries');
 }
 
 async function loadLastReport() {
@@ -182,6 +337,21 @@ async function loadLastReport() {
 }
 
 loadLastReport();
+
+attachEntryHandlers(cleanList, 'CleanEntries');
+attachEntryHandlers(issueList, 'IssueEntries');
+
+detailCloseButton.addEventListener('click', closeDetails);
+detailOverlay.addEventListener('click', (event) => {
+  if (event.target === detailOverlay) {
+    closeDetails();
+  }
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !detailOverlay.classList.contains('hidden')) {
+    closeDetails();
+  }
+});
 
 scanButton.addEventListener('click', async () => {
   scanButton.disabled = true;

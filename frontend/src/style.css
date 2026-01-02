@@ -87,6 +87,19 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.btn.ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.btn.ghost:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: none;
+  transform: none;
+}
+
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -221,9 +234,105 @@ progress::-webkit-progress-value {
   color: #5eead4;
 }
 
+.badge.tls {
+  background: rgba(85, 247, 203, 0.12);
+  color: var(--accent);
+}
+
+.entry-tags {
+  display: flex;
+  align-items: center;
+}
+
 .entry-ping {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 32px 16px;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  width: 100%;
+  max-width: 720px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  padding: 18px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.modal-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.detail-key {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.detail-value {
+  text-align: right;
+}
+
+.detail-row > * + * {
+  margin-left: 12px;
+}
+
+.detail-section {
+  margin-top: 12px;
+}
+
+.detail-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+.detail-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
 .summary {
@@ -275,10 +384,6 @@ progress::-webkit-progress-value {
   margin-left: 8px;
 }
 
-.results > * + * {
-  margin-top: 18px;
-}
-
 .panel > * + * {
   margin-top: 12px;
 }
@@ -293,6 +398,10 @@ progress::-webkit-progress-value {
 
 .entry-header > * + * {
   margin-left: 12px;
+}
+
+.entry-tags > * + * {
+  margin-left: 8px;
 }
 
 @supports (font-size: clamp(1rem, 2vw, 3rem)) {

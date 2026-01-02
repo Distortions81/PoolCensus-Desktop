@@ -471,7 +471,7 @@
         {{end}}
         <div class="k">Total payout</div>
         <div class="v mono">{{fmtN .Host.Latest.TotalPayout 8}} BTC</div>
-        <div class="s {{.Host.Latest.RewardClass}}">{{.Host.Latest.RewardNote}}</div>
+        {{if .Host.Latest.RewardNote}}<div class="s {{.Host.Latest.RewardClass}}">{{.Host.Latest.RewardNote}}</div>{{end}}
       </div>
 
       <div class="kpi">
