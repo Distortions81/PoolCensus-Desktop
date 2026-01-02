@@ -12,7 +12,7 @@ apt install -y --no-install-recommends \
   build-essential \
   pkg-config \
   libgtk-3-dev \
-  libwebkit2gtk-4.0-dev \
+  libwebkit2gtk-4.1-dev \
   nodejs \
   npm \
   git \
