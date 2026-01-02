@@ -18,6 +18,11 @@ apt install -y --no-install-recommends \
   git \
   ca-certificates
 
+PKGCONFIG_DIR="/usr/lib/x86_64-linux-gnu/pkgconfig"
+if [[ -f "$PKGCONFIG_DIR/webkit2gtk-4.1.pc" ]]; then
+  ln -sf "webkit2gtk-4.1.pc" "$PKGCONFIG_DIR/webkit2gtk-4.0.pc"
+fi
+
 export PATH="$HOME/go/bin:$PATH"
 
 if ! command -v go >/dev/null 2>&1; then

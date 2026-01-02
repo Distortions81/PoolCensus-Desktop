@@ -82,6 +82,23 @@
     </section>
 
     <section>
+      <h2>WebKitGTK note (Linux)</h2>
+      <p>Ubuntu 24.04 ships <code>libwebkit2gtk-4.1-dev</code>, but Wails still asks for the 4.0 pkg-config name. <code>scripts/setup-ubuntu.sh</code> now creates a symlink for <code>webkit2gtk-4.0.pc</code>.</p>
+      <p>If you skip the bootstrap script, manually run <code>sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc</code> so the build can find WebKit.</p>
+    </section>
+
+    <section>
+      <h2>Packaging scripts</h2>
+      <p>After dependencies are installed, the build helpers regenerate the frontend bundle and produce platform-specific distributions.</p>
+      <ul>
+        <li><code>scripts/build-linux.sh</code> – runs <code>npm run build</code> in <code>frontend/</code> and then <code>wails build</code> for Linux.</li>
+        <li><code>scripts/build-mac.sh</code> – equivalent packaging steps for macOS.</li>
+        <li><code>scripts/build-windows.bat</code> – runs the frontend build and <code>wails build</code> from a Windows shell.</li>
+      </ul>
+      <p class="kicker">Use these scripts when you’re ready to create packaged binaries for each platform.</p>
+    </section>
+
+    <section>
       <h2>Using the desktop app</h2>
       <p>Open PoolCensus, click <strong>Start scan</strong>, and watch the progress bar walk through every configured pool. When the scan completes the UI will show how many hosts looked healthy and which ones reported issues.</p>
       <p class="kicker">Scanning is entirely manual now; the frontend never starts a background scan without your input.</p>
